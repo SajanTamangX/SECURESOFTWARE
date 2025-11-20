@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Phishing Simulation – Learning Page</h2>
+
+<p>Hello {{ campaign_recipient.recipient.first_name|default:"there" }},</p>
+
+<p>
+This email was part of a <strong>simulated phishing campaign</strong> run using the
+SecureSoftware portal. No real credentials were captured, but your interactions
+(open, click, report) have been recorded to help improve security awareness.
+</p>
+
+<h3>Why this email was suspicious</h3>
+
+<p>{{ learning_points|linebreaks }}</p>
+
+<h3>Your actions in this simulation</h3>
+
+<ul>
+    <li>Opened: {{ opened|yesno:"Yes,No" }}</li>
+    <li>Clicked link: {{ clicked|yesno:"Yes,No" }}</li>
+    <li>Reported: {{ reported|yesno:"Yes,No" }}</li>
+</ul>
+
+<p>
+If you receive a similar email in the future, remember to:
+<ul>
+    <li>Check the sender address and domain carefully.</li>
+    <li>Be suspicious of urgent language and threats.</li>
+    <li>Hover over links to verify the real destination.</li>
+    <li>When in doubt, report the email using your organisation's process.</li>
+</ul>
+</p>
+
+{% endblock %}
+

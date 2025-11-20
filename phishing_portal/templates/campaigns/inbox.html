@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h1>Inbox</h1>
+
+    {% if emails %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Campaign</th>
+                    <th>To</th>
+                    <th>Sent</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for email in emails %}
+                <tr class="{% if not email.is_read %}unread-row{% endif %}">
+                    <td>
+                        <a href="{% url 'campaigns:inbox_detail' email.pk %}"
+                           class="inbox-link">
+                            {{ email.subject }}
+                        </a>
+                    </td>
+                    <td>{{ email.campaign.name }}</td>
+                    <td>{{ email.recipient.recipient.email }}</td>
+                    <td>{{ email.sent_at|date:"M j, Y, g:i a" }}</td>
+                    <td>
+                        {% if email.is_read %}
+                            Read
+                        {% else %}
+                            Unread
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No emails received yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
+

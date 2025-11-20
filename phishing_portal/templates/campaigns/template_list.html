@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Email Templates</h2>
+{% if user.role == "ADMIN" or user.role == "INSTRUCTOR" %}
+<p><a class="btn-primary" href="{% url 'campaigns:template_create' %}">New Template</a></p>
+{% endif %}
+
+<form method="get" style="margin-bottom: 1rem;">
+    <input type="text" name="q" placeholder="Search templates..." value="{{ query }}" style="padding: 0.4rem; border: 1px solid #ccc; border-radius: 4px; margin-right: 0.5rem;">
+    <button class="btn-primary" type="submit">Search</button>
+    {% if query %}
+        <a href="{% url 'campaigns:template_list' %}" class="btn-primary" style="margin-left: 0.5rem;">Clear</a>
+    {% endif %}
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Subject</th>
+            <th>Created by</th>
+            <th>Created at</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for t in templates %}
+        <tr>
+            <td>
+                {{ t.name }}
+                <button class="btn-primary" onclick="showPreview({{ t.id }}, '{{ t.name|escapejs }}', '{{ t.subject|escapejs }}', '{{ t.body|escapejs }}')" style="margin-left: 0.5rem; padding: 0.2rem 0.5rem; font-size: 0.85rem;">Preview</button>
+            </td>
+            <td>{{ t.subject }}</td>
+            <td>{{ t.created_by }}</td>
+            <td>{{ t.created_at }}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="4">No templates yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% if templates.has_other_pages %}
+<div style="margin-top: 1rem;">
+    {% if templates.has_previous %}
+        <a href="?page={{ templates.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn-primary">Previous</a>
+    {% endif %}
+    <span style="margin: 0 1rem;">Page {{ templates.number }} of {{ templates.paginator.num_pages }}</span>
+    {% if templates.has_next %}
+        <a href="?page={{ templates.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn-primary">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+<!-- Preview Modal -->
+<div id="previewModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color: #fff; margin: 5% auto; padding: 2rem; border-radius: 12px; width: 80%; max-width: 800px; max-height: 80vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 id="previewTitle">Email Preview</h2>
+            <button onclick="closePreview()" style="background: var(--blue-dark); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Close</button>
+        </div>
+        <div style="border: 1px solid #ddd; padding: 1rem; background: #f9f9f9; border-radius: 4px;">
+            <p><strong>Subject:</strong> <span id="previewSubject"></span></p>
+            <hr style="margin: 1rem 0;">
+            <div id="previewBody" style="background: #fff; padding: 1rem; border-radius: 4px; min-height: 200px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showPreview(id, name, subject, body) {
+    document.getElementById('previewTitle').textContent = 'Preview: ' + name;
+    document.getElementById('previewSubject').textContent = subject;
+    document.getElementById('previewBody').innerHTML = body;
+    document.getElementById('previewModal').style.display = 'block';
+}
+
+function closePreview() {
+    document.getElementById('previewModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('previewModal');
+    if (event.target == modal) {
+        closePreview();
+    }
+}
+</script>
+{% endblock %}
+

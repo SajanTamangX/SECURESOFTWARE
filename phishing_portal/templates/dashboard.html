@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Analytics Dashboard</h2>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <div class="dashboard-card">
+        <h3 style="margin: 0; color: #123; font-size: 2rem;">{{ total_campaigns }}</h3>
+        <p style="margin: 0.5rem 0 0 0; color: #123;">Total Campaigns</p>
+    </div>
+    <div class="dashboard-card">
+        <h3 style="margin: 0; color: #123; font-size: 2rem;">{{ total_recipients }}</h3>
+        <p style="margin: 0.5rem 0 0 0; color: #123;">Total Recipients</p>
+    </div>
+    <div class="dashboard-card">
+        <h3 style="margin: 0; color: #123; font-size: 2rem;">{{ total_events }}</h3>
+        <p style="margin: 0.5rem 0 0 0; color: #123;">Total Events</p>
+    </div>
+    <div class="dashboard-card">
+        <h3 style="margin: 0; color: #123; font-size: 2rem;">{{ engagement_rate }}%</h3>
+        <p style="margin: 0.5rem 0 0 0; color: #123;">Engagement Rate</p>
+    </div>
+</div>
+
+<h3>Events (Last 7 Days)</h3>
+<div style="background: #fff; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;">
+    <canvas id="eventsChart" width="400" height="150"></canvas>
+</div>
+
+<h3>Top 5 Campaigns by Clicks</h3>
+<table class="table top-campaigns-table">
+    <thead>
+        <tr>
+            <th>Campaign</th>
+            <th>Clicks</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for campaign in top_campaigns %}
+        <tr>
+            <td><a href="{% url 'campaigns:campaign_detail' campaign.pk %}">{{ campaign.name }}</a></td>
+            <td>{{ campaign.click_count }}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="2">No campaigns with clicks yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const dailyData = {{ daily_data|safe }};
+    const ctx = document.getElementById('eventsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dailyData.map(d => d.date),
+            datasets: [
+                {
+                    label: 'Opens',
+                    data: dailyData.map(d => d.opens),
+                    borderColor: '#3f708a',
+                    backgroundColor: 'rgba(63, 112, 138, 0.1)',
+                },
+                {
+                    label: 'Clicks',
+                    data: dailyData.map(d => d.clicks),
+                    borderColor: '#477e9c',
+                    backgroundColor: 'rgba(71, 126, 156, 0.1)',
+                },
+                {
+                    label: 'Reports',
+                    data: dailyData.map(d => d.reports),
+                    borderColor: '#4f8cad',
+                    backgroundColor: 'rgba(79, 140, 173, 0.1)',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+

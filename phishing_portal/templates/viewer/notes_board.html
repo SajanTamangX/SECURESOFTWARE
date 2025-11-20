@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 2rem auto 3rem auto;">
+
+  <!-- Header -->
+  <div style="background:#ffffff; border-radius:10px; padding:20px 24px;
+              box-shadow:0 8px 20px rgba(0,0,0,0.08); margin-bottom:24px;">
+    <h1 style="margin:0; font-size:24px;">My Sticky Notes</h1>
+    <p style="margin:6px 0 0 0; color:#555; font-size:14px;">
+      Use this board to keep track of tasks, reminders, and security tips for yourself.
+    </p>
+  </div>
+
+  <div style="display:grid; grid-template-columns: minmax(260px, 1.1fr) minmax(260px,1fr);
+              gap:20px; align-items:flex-start;">
+
+    <!-- Add note form -->
+    <div style="background:#fffbea; border-radius:10px; padding:18px 20px;
+                box-shadow:0 6px 16px rgba(0,0,0,0.06);">
+      <h2 style="margin-top:0; font-size:18px;">Add a new note</h2>
+      <form method="post" style="font-size:14px;">
+        {% csrf_token %}
+        <div style="margin-bottom:10px;">
+          <label>Title</label><br>
+          <input type="text" name="title" required
+                 style="width:100%; padding:6px 8px; border-radius:6px;
+                        border:1px solid #d0b85b; font-size:14px;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <label>Details (optional)</label><br>
+          <textarea name="body" rows="3"
+                    style="width:100%; padding:6px 8px; border-radius:6px;
+                           border:1px solid #d0b85b; font-size:14px;"></textarea>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label>Priority</label><br>
+          <select name="priority"
+                  style="padding:6px 8px; border-radius:6px; border:1px solid #d0b85b;
+                         font-size:14px;">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        <button type="submit"
+                style="padding:8px 14px; border:none; border-radius:6px;
+                       background:#f0cf5b; color:#4b3b00; font-weight:600; cursor:pointer;">
+          Save Note
+        </button>
+      </form>
+    </div>
+
+    <!-- Notes list -->
+    <div style="background:#ffffff; border-radius:10px; padding:18px 20px;
+                box-shadow:0 6px 16px rgba(0,0,0,0.06);">
+      <h2 style="margin-top:0; font-size:18px;">Your notes</h2>
+
+      {% if notes %}
+        <ul style="list-style:none; margin:0; padding:0; font-size:14px;">
+          {% for note in notes %}
+            <li style="margin-bottom:10px; padding:10px 12px; border-radius:8px;
+                       background: {% if note.is_done %}#f3f3f3{% else %}#fffbea{% endif %};
+                       border:1px solid #e0d3a5;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <strong style="{% if note.is_done %}text-decoration:line-through; color:#777;{% endif %}">
+                    {{ note.title }}
+                  </strong>
+                  {% if note.priority == 'high' %}
+                    <span style="font-size:11px; color:#b3261e; margin-left:6px;">HIGH</span>
+                  {% elif note.priority == 'medium' %}
+                    <span style="font-size:11px; color:#b38f00; margin-left:6px;">MEDIUM</span>
+                  {% else %}
+                    <span style="font-size:11px; color:#2e7d32; margin-left:6px;">LOW</span>
+                  {% endif %}
+                </div>
+                <form method="post" action="{% url 'campaigns:viewer_note_toggle' note.id %}">
+                  {% csrf_token %}
+                  <button type="submit"
+                          style="border:none; background:none; font-size:12px; cursor:pointer;
+                                 color:#0b57d0;">
+                    {% if note.is_done %}Mark as active{% else %}Mark as done{% endif %}
+                  </button>
+                </form>
+              </div>
+              {% if note.body %}
+                <p style="margin:6px 0 0 0; font-size:13px; color:#555;
+                          {% if note.is_done %}text-decoration:line-through; color:#888;{% endif %}">
+                  {{ note.body }}
+                </p>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="color:#777; font-size:14px;">
+          You don't have any notes yet. Create a quick reminder on the left.
+        </p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+

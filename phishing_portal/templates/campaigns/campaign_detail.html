@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Campaign: {{ campaign.name }}</h2>
+<p>{{ campaign.description }}</p>
+<p>
+    Template: <strong>{{ campaign.email_template.name }}</strong><br>
+    Status: {{ campaign.get_status_display }}<br>
+    Scheduled for: {{ campaign.scheduled_for }}<br>
+    Created by: {{ campaign.created_by }} at {{ campaign.created_at }}
+</p>
+
+<h3>Metrics</h3>
+<ul>
+    <li>Total recipients: {{ metrics.total_recipients }}</li>
+    <li>Opened: {{ metrics.unique_opens }}</li>
+    <li>Clicked: {{ metrics.unique_clicks }}</li>
+    <li>Reported: {{ metrics.unique_reports }}</li>
+</ul>
+
+{% if user.role == "ADMIN" or user.role == "INSTRUCTOR" %}
+<p>
+    <a class="btn-primary" href="{% url 'campaigns:upload_recipients' campaign.pk %}">
+        Upload Recipients (CSV)
+    </a>
+    <form method="post" action="{% url 'campaigns:send_campaign' campaign.pk %}" style="display: inline; margin-left: 1rem;" id="sendCampaignForm">
+        {% csrf_token %}
+        <button class="btn-primary" type="submit" id="sendCampaignBtn">Send Emails (Dev)</button>
+    </form>
+    <a class="btn-primary" href="{% url 'campaigns:export_recipients' campaign.pk %}" style="margin-left: 1rem;">
+        Export Recipients (CSV)
+    </a>
+    <a class="btn-primary" href="{% url 'campaigns:export_events' campaign.pk %}" style="margin-left: 1rem;">
+        Export Events (CSV)
+    </a>
+</p>
+<script>
+    document.getElementById('sendCampaignForm').addEventListener('submit', function(e) {
+        const btn = document.getElementById('sendCampaignBtn');
+        btn.disabled = true;
+        btn.classList.add('loading');
+        btn.innerHTML = '<span class="spinner"></span>Sending...';
+    });
+</script>
+{% endif %}
+<h3>Recipients</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Department</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for cr in recipients %}
+        <tr>
+            <td>{{ cr.recipient.email }}</td>
+            <td>{{ cr.recipient.first_name }} {{ cr.recipient.last_name }}</td>
+            <td>{{ cr.recipient.department }}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="3">No recipients linked to this campaign yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

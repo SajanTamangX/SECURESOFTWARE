@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div style="background:#ffffff; border-radius:8px; padding:18px 20px;
+                border:1px solid #e1e1e1; margin-bottom:18px;">
+        <div style="font-size:20px; font-weight:600; margin-bottom:8px;">
+            {{ email.subject }}
+        </div>
+
+        <div style="font-size:14px; color:#444; margin-bottom:2px;">
+            <strong>From:</strong> Indigo Accounts &lt;no-reply@securesoftware.local&gt;
+        </div>
+
+        <div style="font-size:14px; color:#444; margin-bottom:2px;">
+            <strong>To:</strong> {{ email.recipient.recipient.email }}
+        </div>
+
+        <div style="font-size:14px; color:#666;">
+            <strong>Date:</strong> {{ email.sent_at|date:"M j, Y, g:i a" }}
+        </div>
+    </div>
+
+    <div style="margin-top:10px;">
+        {% if email.body_html %}
+            {{ email.body_html|safe }}
+        {% else %}
+            {{ email.body_text|urlize|linebreaksbr }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

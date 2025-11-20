@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 2rem auto 3rem auto;">
+
+  <!-- Top welcome + status -->
+  <div style="background:#ffffff; border-radius:10px; padding:20px 24px;
+              box-shadow:0 8px 20px rgba(0,0,0,0.08); margin-bottom:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+      <div>
+        <h1 style="margin:0; font-size:24px;">Welcome, {{ request.user.get_short_name|default:request.user.username }}</h1>
+        <p style="margin:4px 0 0 0; color:#555; font-size:14px;">
+          This is your NepSoftware Portal
+        </p>
+      </div>
+      <div style="font-size:13px; padding:6px 12px; border-radius:999px;
+                  background:#e3f2fd; color:#0b57d0; font-weight:600;">
+        System status: ✅ Running
+      </div>
+    </div>
+  </div>
+
+  <!-- Three main tiles -->
+  <div class="ns-dashboard-grid">
+
+    <!-- Inbox tile -->
+    <div style="background:#ffffff; border-radius:10px; padding:18px 20px;
+                box-shadow:0 6px 16px rgba(0,0,0,0.06);">
+      <h2 style="margin-top:0; font-size:18px;">📥 Inbox</h2>
+      <p style="margin:4px 0 10px 0; font-size:14px; color:#555;">
+        All the emails
+      </p>
+      <a href="{% url 'campaigns:inbox' %}"
+         style="display:inline-block; margin-top:6px; padding:8px 14px;
+                background:#0b57d0; color:#fff; border-radius:6px;
+                text-decoration:none; font-size:14px; font-weight:600;">
+        Go to Inbox
+      </a>
+    </div>
+
+    <!-- Security blog tile -->
+    <div style="background:#ffffff; border-radius:10px; padding:18px 20px;
+                box-shadow:0 6px 16px rgba(0,0,0,0.06);">
+      <h2 style="margin-top:0; font-size:18px;">📰 Security Blog</h2>
+      <p style="margin:4px 0 10px 0; font-size:14px; color:#555;">
+        Short articles about real-world scams and how to avoid them.
+      </p>
+      <ul style="margin:0 0 10px 0; padding-left:18px; font-size:13px; color:#555;">
+        <li>Spotting fake password reset emails</li>
+        <li>How to check links before you click</li>
+        <li>Reporting suspicious messages at work</li>
+      </ul>
+      <a href="{% if user.role == 'VIEWER' %}{% url 'campaigns:blog_list' role='viewer' %}{% elif user.role == 'INSTRUCTOR' %}{% url 'campaigns:blog_list' role='instructor' %}{% elif user.role == 'ADMIN' %}{% url 'campaigns:blog_list' role='admin' %}{% else %}{% url 'campaigns:blog_list' role='viewer' %}{% endif %}"
+         style="display:inline-block; margin-top:6px; padding:8px 14px;
+                background:#ffffff; color:#0b57d0; border-radius:6px;
+                text-decoration:none; font-size:14px; font-weight:600;
+                border:1px solid #0b57d0;">
+        Open Blog
+      </a>
+    </div>
+
+    <!-- Sticky notes / To-dos tile -->
+    <div style="background:#fffbea; border-radius:10px; padding:18px 20px;
+                box-shadow:0 6px 16px rgba(0,0,0,0.06); position:relative;">
+      <h2 style="margin-top:0; font-size:18px;">🗒️ My Sticky Notes</h2>
+      <p style="margin:4px 0 10px 0; font-size:14px; color:#6b5a1e;">
+        Quick reminders just for you.
+      </p>
+      <ul style="margin:0 0 10px 0; padding-left:18px; font-size:13px; color:#6b5a1e;">
+        <li>Never enter your password from an email link.</li>
+        <li>Hover over links to see the real destination.</li>
+        <li>If in doubt, use "Report this Email".</li>
+      </ul>
+      <a href="{% url 'campaigns:viewer_notes_board' %}"
+         style="display:inline-block; margin-top:6px; padding:7px 13px;
+                background:#f0cf5b; color:#4b3b00; border-radius:6px;
+                text-decoration:none; font-size:13px; font-weight:600;">
+        Open My To-Do Board
+      </a>
+    </div>
+  </div>
+
+  <!-- Optional: Inbox preview row -->
+  <div style="background:#ffffff; border-radius:10px; padding:18px 20px;
+              box-shadow:0 6px 16px rgba(0,0,0,0.06);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h2 style="margin:0; font-size:17px;">Recent Emails</h2>
+      <a href="{% url 'campaigns:inbox' %}" style="font-size:13px; text-decoration:none; color:#0b57d0;">
+        View all →
+      </a>
+    </div>
+    <div class="ns-table-wrapper">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead>
+        <tr style="border-bottom:1px solid #e0e0e0; color:#777;">
+          <th style="text-align:left; padding:6px 4px;">Subject</th>
+          <th style="text-align:left; padding:6px 4px;">From</th>
+          <th style="text-align:left; padding:6px 4px;">Received</th>
+          <th style="text-align:right; padding:6px 4px;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for email in recent_emails %}
+          <tr style="border-bottom:1px solid #f1f1f1;">
+            <td style="padding:6px 4px;">
+              <a href="{% url 'campaigns:inbox_detail' email.id %}"
+                 style="text-decoration:none; color:#0b57d0;">
+                {{ email.subject }}
+              </a>
+            </td>
+            <td style="padding:6px 4px; color:#555;">no-reply@securesoftware.local</td>
+            <td style="padding:6px 4px; color:#555;">
+              {{ email.sent_at|date:"M j, g:i a" }}
+            </td>
+            <td style="padding:6px 4px; text-align:right; color:#555;">
+              {% if not email.is_read %}Unread{% else %}Read{% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="4" style="padding:10px 4px; color:#777;">
+              No emails yet – your next phishing simulation will appear here.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+

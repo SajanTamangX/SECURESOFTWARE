@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Upload Recipients for {{ campaign.name }}</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn-primary" type="submit">Upload CSV</button>
+</form>
+<p>Expected columns: <code>email, first_name, last_name, department</code></p>
+{% endblock %}
+

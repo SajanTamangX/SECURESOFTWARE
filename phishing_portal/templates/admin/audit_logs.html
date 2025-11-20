@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Audit Logs</h2>
+<p>View all administrative actions and system events.</p>
+<p>
+    <a class="btn-primary" href="{% url 'export_audit_logs' %}">Export Audit Logs (CSV)</a>
+</p>
+
+<form method="get" style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+    <div>
+        <label for="user" style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Filter by User:</label>
+        <input type="text" name="user" id="user" placeholder="Username..." value="{{ user_filter }}" style="padding: 0.4rem; border: 1px solid #ccc; border-radius: 4px; width: 150px;">
+    </div>
+    <div>
+        <label for="action" style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Filter by Action:</label>
+        <input type="text" name="action" id="action" placeholder="Action..." value="{{ action_filter }}" style="padding: 0.4rem; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+    </div>
+    <div>
+        <button class="btn-primary" type="submit">Filter</button>
+        {% if user_filter or action_filter %}
+            <a href="{% url 'audit_logs' %}" class="btn-primary" style="margin-left: 0.5rem;">Clear</a>
+        {% endif %}
+    </div>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Details</th>
+            <th>IP Address</th>
+            <th>User Agent</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for log in logs %}
+        <tr>
+            <td>{{ log.created_at }}</td>
+            <td>{{ log.user|default:"System" }}</td>
+            <td>{{ log.action }}</td>
+            <td>{{ log.details|truncatewords:20 }}</td>
+            <td>{{ log.ip_address|truncatechars:16|default:"N/A" }}</td>
+            <td style="font-size: 0.85em; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ log.user_agent }}">{{ log.user_agent|truncatechars:40|default:"N/A" }}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="6">No audit logs yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% if logs.has_other_pages %}
+<div style="margin-top: 1rem;">
+    {% if logs.has_previous %}
+        <a href="?page={{ logs.previous_page_number }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}" class="btn-primary">Previous</a>
+    {% endif %}
+    <span style="margin: 0 1rem;">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</span>
+    {% if logs.has_next %}
+        <a href="?page={{ logs.next_page_number }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}" class="btn-primary">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
