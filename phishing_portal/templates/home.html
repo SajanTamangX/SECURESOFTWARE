@@ -129,5 +129,75 @@
   </div>
 
 </div>
+
+<style>
+/* Dark mode support for home page */
+body.ns-dark div[style*="background:#ffffff"] {
+  background: #1e293b !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+body.ns-dark div[style*="background:#fffbea"] {
+  background: #334155 !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+body.ns-dark h1,
+body.ns-dark h2 {
+  color: #f1f5f9 !important;
+}
+
+body.ns-dark p[style*="color:#555"] {
+  color: #cbd5e1 !important;
+}
+
+body.ns-dark p[style*="color:#6b5a1e"],
+body.ns-dark ul[style*="color:#6b5a1e"],
+body.ns-dark ul[style*="color:#555"] {
+  color: #cbd5e1 !important;
+}
+
+body.ns-dark div[style*="background:#e3f2fd"] {
+  background: #1e3a8a !important;
+  color: #dbeafe !important;
+}
+
+body.ns-dark a[style*="color:#0b57d0"] {
+  color: #60a5fa !important;
+}
+
+body.ns-dark a[style*="background:#0b57d0"] {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+body.ns-dark a[style*="background:#ffffff"][style*="color:#0b57d0"] {
+  background: transparent !important;
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+}
+
+body.ns-dark a[style*="background:#f0cf5b"] {
+  background: #f59e0b !important;
+  color: #1e293b !important;
+}
+
+body.ns-dark table th[style*="color:#777"] {
+  color: #9ca3af !important;
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+}
+
+body.ns-dark table td[style*="color:#555"] {
+  color: #cbd5e1 !important;
+}
+
+body.ns-dark table td[style*="color:#777"] {
+  color: #9ca3af !important;
+}
+
+body.ns-dark tr[style*="border-bottom:1px solid #f1f1f1"] {
+  border-bottom-color: rgba(255,255,255,0.05) !important;
+}
+</style>
 {% endblock %}
 
