@@ -325,6 +325,7 @@ def inbox(request):
 
     context = {
         "emails": qs,
+        "user_role": user.role,
     }
     return render(request, "campaigns/inbox.html", context)
 
