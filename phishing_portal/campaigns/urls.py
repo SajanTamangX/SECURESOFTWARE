@@ -19,6 +19,7 @@ urlpatterns = [
     path("l/<uuid:tracking_id>/", views.landing_page, name="landing_page"),
     path("inbox/", views.inbox, name="inbox"),
     path("inbox/<int:pk>/", views.inbox_detail, name="inbox_detail"),
+    path("inbox/<int:pk>/toggle-read/", views.toggle_email_read, name="toggle_email_read"),
     # Blog routes for all roles
     path("<str:role>/blog/", views.blog_list, name="blog_list"),
     path("<str:role>/blog/<slug:slug>/", views.blog_detail, name="blog_detail"),

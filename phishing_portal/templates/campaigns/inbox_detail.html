@@ -68,7 +68,7 @@
                         position:absolute;
                         top:120%;
                         right:0;
-                        min-width:190px;
+                        min-width:210px;
                         background:#ffffff;
                         border-radius:8px;
                         border:1px solid #e5e7eb;
@@ -78,6 +78,23 @@
                         z-index:20;
                     "
                 >
+                    <button
+                        type="button"
+                        class="ns-email-view-headers"
+                        style="
+                            display:block;
+                            width:100%;
+                            text-align:left;
+                            padding:8px 12px;
+                            font-size:13px;
+                            background:none;
+                            border:none;
+                            cursor:pointer;
+                        "
+                    >
+                        📬 View raw headers
+                    </button>
+
                     <a
                         href="{% url 'campaigns:track_report' email.recipient.tracking_id %}"
                         style="
@@ -92,6 +109,29 @@
                     </a>
                 </div>
             </div>
+        </div>
+
+        <!-- Collapsible headers panel -->
+        <div id="ns-headers-panel"
+             style="
+                margin-top:12px;
+                display:none;
+                border-radius:6px;
+                background:#f9fafb;
+                border:1px dashed #d1d5db;
+                padding:10px 12px;
+                font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+                font-size:11px;
+                color:#111827;
+                white-space:pre-wrap;
+             ">
+From: Indigo Accounts <no-reply@securesoftware.local>
+To: {{ email.recipient.recipient.email }}
+Subject: {{ email.subject }}
+Date: {{ email.sent_at|date:"D, d M Y H:i:s O" }}
+X-Campaign-Name: {{ email.campaign.name }}
+X-Tracking-ID: {{ email.recipient.tracking_id }}
+X-Portal: NepSoftware Security Training
         </div>
     </div>
 
@@ -111,9 +151,14 @@
     if (!container) return;
 
     var toggle = container.querySelector('.ns-email-menu-toggle');
-    var menu = container.querySelector('.ns-email-menu');
+    var menu   = container.querySelector('.ns-email-menu');
+    var viewHeadersBtn = container.querySelector('.ns-email-view-headers');
+    var headersPanel   = document.getElementById('ns-headers-panel');
+    var body = document.body;
+
     if (!toggle || !menu) return;
 
+    // Open / close 3-dot menu
     toggle.addEventListener('click', function (e) {
       e.stopPropagation();
       var isOpen = menu.style.display === 'block';
@@ -121,6 +166,17 @@
       toggle.setAttribute('aria-expanded', String(!isOpen));
     });
 
+    // Toggle headers panel
+    if (viewHeadersBtn && headersPanel) {
+      viewHeadersBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var isVisible = headersPanel.style.display === 'block';
+        headersPanel.style.display = isVisible ? 'none' : 'block';
+      });
+    }
+
+    // Close menu on outside click
     document.addEventListener('click', function () {
       menu.style.display = 'none';
       toggle.setAttribute('aria-expanded', 'false');
@@ -163,12 +219,24 @@ body.ns-dark .ns-email-menu {
   box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
 }
 
+body.ns-dark .ns-email-menu button,
 body.ns-dark .ns-email-menu a {
+  color: #e2e8f0 !important;
+}
+
+body.ns-dark .ns-email-menu button:hover,
+body.ns-dark .ns-email-menu a:hover {
+  background: rgba(255,255,255,0.05) !important;
+}
+
+body.ns-dark .ns-email-menu a[style*="color:#b91c1c"] {
   color: #f87171 !important;
 }
 
-body.ns-dark .ns-email-menu a:hover {
-  background: rgba(255,255,255,0.05) !important;
+body.ns-dark #ns-headers-panel {
+  background: #0f172a !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #e2e8f0 !important;
 }
 </style>
 

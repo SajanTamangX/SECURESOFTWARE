@@ -348,6 +348,22 @@ def inbox_detail(request, pk: int):
     return render(request, "campaigns/inbox_detail.html", {"email": email_obj})
 
 
+@login_required
+@require_POST
+def toggle_email_read(request, pk: int):
+    email_obj = get_object_or_404(CampaignEmail, pk=pk)
+
+    user = request.user
+    # VIEWERs can only toggle their own emails
+    if user.role == "VIEWER" and user.email:
+        if email_obj.recipient.recipient.email != user.email:
+            return HttpResponseForbidden("You are not allowed to modify this email.")
+
+    email_obj.is_read = not email_obj.is_read
+    email_obj.save(update_fields=["is_read"])
+    return redirect("campaigns:inbox")
+
+
 # --- Blog Features (Available to All Roles) ---
 
 from .blog_posts import BLOG_POSTS

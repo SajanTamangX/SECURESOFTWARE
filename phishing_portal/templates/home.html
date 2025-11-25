@@ -80,6 +80,161 @@
     </div>
   </div>
 
+  <!-- Interactive Training Modules -->
+  <div style="
+      background:#ffffff;
+      border-radius:10px;
+      padding:20px 22px;
+      box-shadow:0 6px 16px rgba(0,0,0,0.06);
+      margin-bottom:22px;
+  ">
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        flex-wrap:wrap;
+        gap:0.5rem;
+        margin-bottom:14px;
+    ">
+      <div>
+        <h2 style="margin:0; font-size:18px;">Interactive Training Modules</h2>
+        <p style="margin:4px 0 0 0; font-size:13px; color:#6b7280;">
+          Learn by doing – short lessons, quizzes, and explainers built around real phishing attacks.
+        </p>
+      </div>
+      <span style="
+          font-size:11px;
+          padding:4px 10px;
+          border-radius:999px;
+          background:#eff6ff;
+          color:#1d4ed8;
+      ">
+        Recommended: 5–10 minutes per module
+      </span>
+    </div>
+
+    <div class="ns-training-grid" style="
+        display:grid;
+        grid-template-columns:repeat(3, minmax(0, 1fr));
+        gap:14px;
+    ">
+      <!-- Micro-learning videos -->
+      <div style="
+          border-radius:10px;
+          border:1px solid #e5e7eb;
+          padding:14px 14px 16px 14px;
+          display:flex;
+          flex-direction:column;
+          gap:6px;
+      ">
+        <div style="font-size:13px; font-weight:600;">
+          🎥 Short micro-learning videos
+        </div>
+        <p style="margin:0; font-size:13px; color:#4b5563;">
+          Watch 2–5 minute scenario-based clips showing real phishing attempts and how staff responded.
+        </p>
+        <div style="font-size:11px; color:#6b7280;">
+          • Auto-progress tracking<br>
+          • Subtitles + mobile friendly
+        </div>
+        <a href="#"
+           style="
+             margin-top:auto;
+             align-self:flex-start;
+             padding:7px 12px;
+             border-radius:6px;
+             background:#0b57d0;
+             color:#ffffff;
+             text-decoration:none;
+             font-size:12px;
+             font-weight:600;
+           ">
+          Browse video modules
+        </a>
+      </div>
+
+      <!-- Gamified quizzes -->
+      <div style="
+          border-radius:10px;
+          border:1px solid #e5e7eb;
+          padding:14px 14px 16px 14px;
+          display:flex;
+          flex-direction:column;
+          gap:6px;
+      ">
+        <div style="font-size:13px; font-weight:600;">
+          🕹️ Gamified quizzes & scoreboards
+        </div>
+        <p style="margin:0; font-size:13px; color:#4b5563;">
+          Spot red flags in simulated emails, URLs, and SMS messages. Earn points and badges as you go.
+        </p>
+        <div style="font-size:11px; color:#6b7280;">
+          • Instant feedback on each question<br>
+          • Team leaderboard support (future)
+        </div>
+        <a href="#"
+           style="
+             margin-top:auto;
+             align-self:flex-start;
+             padding:7px 12px;
+             border-radius:6px;
+             background:#ffffff;
+             color:#0b57d0;
+             border:1px solid #0b57d0;
+             text-decoration:none;
+             font-size:12px;
+             font-weight:600;
+           ">
+          Start a quick quiz
+        </a>
+      </div>
+
+      <!-- Animated explainers -->
+      <div style="
+          border-radius:10px;
+          border:1px solid #e5e7eb;
+          padding:14px 14px 16px 14px;
+          display:flex;
+          flex-direction:column;
+          gap:6px;
+      ">
+        <div style="font-size:13px; font-weight:600;">
+          ✨ Animated explainers
+        </div>
+        <p style="margin:0; font-size:13px; color:#4b5563;">
+          Simple animations that walk through how phishing, credential harvesting, and MFA fatigue attacks actually work.
+        </p>
+        <div style="font-size:11px; color:#6b7280;">
+          • Perfect for first-time learners<br>
+          • Can be embedded into campaigns later
+        </div>
+        <a href="#"
+           style="
+             margin-top:auto;
+             align-self:flex-start;
+             padding:7px 12px;
+             border-radius:6px;
+             background:#111827;
+             color:#f9fafb;
+             text-decoration:none;
+             font-size:12px;
+             font-weight:600;
+           ">
+          View explainers
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile stacking -->
+    <style>
+      @media (max-width: 900px) {
+        .ns-training-grid {
+          grid-template-columns: 1fr !important;
+        }
+      }
+    </style>
+  </div>
+
   <!-- Optional: Inbox preview row -->
   <div style="background:#ffffff; border-radius:10px; padding:18px 20px;
               box-shadow:0 6px 16px rgba(0,0,0,0.06);">
@@ -197,6 +352,49 @@ body.ns-dark table td[style*="color:#777"] {
 
 body.ns-dark tr[style*="border-bottom:1px solid #f1f1f1"] {
   border-bottom-color: rgba(255,255,255,0.05) !important;
+}
+
+/* Dark mode for Interactive Training Modules */
+body.ns-dark div[style*="background:#ffffff"][style*="border-radius:10px"] {
+  background: #1e293b !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+body.ns-dark h2[style*="font-size:18px"] {
+  color: #f1f5f9 !important;
+}
+
+body.ns-dark div[style*="border:1px solid #e5e7eb"] {
+  border-color: rgba(255,255,255,0.1) !important;
+  background: #334155 !important;
+}
+
+body.ns-dark div[style*="font-size:13px; font-weight:600"] {
+  color: #f1f5f9 !important;
+}
+
+body.ns-dark p[style*="color:#4b5563"] {
+  color: #cbd5e1 !important;
+}
+
+body.ns-dark div[style*="color:#6b7280"] {
+  color: #9ca3af !important;
+}
+
+body.ns-dark a[style*="background:#0b57d0"] {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+body.ns-dark a[style*="background:#ffffff"][style*="color:#0b57d0"] {
+  background: transparent !important;
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+}
+
+body.ns-dark a[style*="background:#111827"] {
+  background: #475569 !important;
+  color: #f1f5f9 !important;
 }
 </style>
 {% endblock %}
