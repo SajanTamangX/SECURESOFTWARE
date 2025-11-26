@@ -433,3 +433,9 @@ def viewer_note_toggle(request, note_id):
         note.is_done = not note.is_done
         note.save()
     return redirect("campaigns:viewer_notes_board")
+
+
+@login_required
+def training_videos(request):
+    """Display professional phishing awareness training videos."""
+    return render(request, "campaigns/training_videos.html")

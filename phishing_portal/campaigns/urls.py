@@ -26,5 +26,7 @@ urlpatterns = [
     # Viewer notes
     path("viewer/notes/", views.viewer_notes_board, name="viewer_notes_board"),
     path("viewer/notes/<int:note_id>/toggle/", views.viewer_note_toggle, name="viewer_note_toggle"),
+    # Training videos
+    path("training/videos/", views.training_videos, name="training_videos"),
 ]
 
