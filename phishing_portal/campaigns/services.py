@@ -10,11 +10,13 @@ django_engine = engines["django"]
 
 
 def render_body(template_body: str, context: dict) -> str:
+    """Render template body with context - not currently used but kept for future"""
     tmpl = django_engine.from_string(template_body)
     return tmpl.render(context)
 
 
 def _safe_name(ctx):
+    """Get a safe name from context, fallback to 'Colleague' if nothing found"""
     return ctx.get("first_name") or ctx.get("full_name") or "Colleague"
 
 
@@ -422,6 +424,8 @@ def send_campaign_emails(campaign: Campaign, request=None):
     """
     Send emails for a campaign to all linked recipients.
     Uses MailHog / configured SMTP backend in development.
+    
+    Note: In production, you'd want to use a task queue (Celery) for this.
     """
     cr_qs = CampaignRecipient.objects.select_related("recipient").filter(campaign=campaign)
     
@@ -451,9 +455,9 @@ def send_campaign_emails(campaign: Campaign, request=None):
             click_url = base + click_url
             report_url = base + report_url
 
-        # Choose builder based on template scenario
+        # Choose builder function based on template scenario
         tpl = campaign.email_template
-        builder = SCENARIO_BUILDERS.get(tpl.scenario, build_it_security_alert_body)
+        builder = SCENARIO_BUILDERS.get(tpl.scenario, build_it_security_alert_body)  # Default fallback
 
         text_main, html_main = builder(tpl, ctx, click_url, report_url)
 

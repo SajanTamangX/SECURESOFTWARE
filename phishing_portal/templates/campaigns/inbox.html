@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load tz %}
 
 {% block content %}
 <div class="card" style="max-width: 1100px; margin: 0 auto;">
@@ -81,7 +80,7 @@
               {% endif %}
               <td>
                 <span style="font-size:12px; color:#4b5563;">
-                  {{ email.sent_at|localtime|date:"M j, Y, g:i a" }}
+                  {{ email.sent_at|date:"M j, Y, g:i a" }}
                 </span>
                     </td>
                     <td>

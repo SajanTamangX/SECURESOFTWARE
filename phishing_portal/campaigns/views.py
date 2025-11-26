@@ -25,12 +25,12 @@ from django.http import HttpResponseForbidden
 def template_list(request):
     templates = EmailTemplate.objects.all()
     
-    # Search
+    # Search functionality
     q = request.GET.get("q", "")
     if q:
         templates = templates.filter(name__icontains=q)
     
-    # Pagination
+    # Pagination - TODO: maybe make page size configurable?
     paginator = Paginator(templates, 10)
     page = request.GET.get("page")
     templates_page = paginator.get_page(page)
@@ -87,6 +87,7 @@ def campaign_create(request):
             campaign = form.save(commit=False)
             campaign.created_by = request.user
             campaign.save()
+            # Log the action for audit trail
             log_action(request, "Created campaign", f"Campaign: {campaign.name} (ID: {campaign.id})")
             messages.success(request, "Campaign created.")
             return redirect("campaigns:campaign_detail", pk=campaign.pk)
@@ -107,7 +108,7 @@ def campaign_detail(request, pk):
         .filter(campaign=campaign)
     )
     
-    # Metrics
+    # Calculate metrics - could optimize this with annotations but works for now
     events = Event.objects.filter(campaign_recipient__campaign=campaign)
     total_recipients = recipients.count()
     opens = events.filter(event_type=Event.Type.OPEN).values("campaign_recipient").distinct().count()
@@ -198,9 +199,10 @@ def upload_recipients(request, pk):
 # --- Tracking & Landing Page ---
 
 def _hash_ip(ip: str) -> str:
+    """Hash IP address for privacy - we don't store raw IPs"""
     if not ip:
         return ""
-    # Simple one-way hash to avoid storing raw IPs
+    # Using SHA-256 - one-way hash so we can't reverse it
     return hashlib.sha256(ip.encode("utf-8")).hexdigest()
 
 
@@ -224,7 +226,8 @@ def _log_event(tracking_id, event_type, request):
     return cr
 
 
-# 1x1 transparent PNG (so that email clients load it)
+# 1x1 transparent PNG for email tracking pixel
+# Email clients need to load this image to track opens
 PIXEL_DATA = (
     b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
     b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
@@ -291,6 +294,7 @@ def landing_page(request, tracking_id):
 
 @role_required("ADMIN", "INSTRUCTOR")
 def send_campaign(request, pk):
+    # Import here to avoid circular dependency issues
     from .services import send_campaign_emails
     
     campaign = get_object_or_404(Campaign, pk=pk)
@@ -304,6 +308,7 @@ def send_campaign(request, pk):
         )
         messages.success(request, "Emails sent for this campaign (check MailHog).")
         return redirect("campaigns:campaign_detail", pk=campaign.pk)
+    # If GET request, just redirect back - maybe add confirmation page later?
     return redirect("campaigns:campaign_detail", pk=campaign.pk)
 
 
@@ -319,7 +324,7 @@ def inbox(request):
     qs = CampaignEmail.objects.all().select_related("campaign", "recipient", "recipient__recipient")
 
     user = request.user
-    # If the user has an email address, filter emails by that
+    # Filter by user's email if they have one - TODO: handle case where user email doesn't match
     if user.email:
         qs = qs.filter(recipient__recipient__email=user.email)
 
@@ -372,10 +377,11 @@ from .blog_posts import BLOG_POSTS
 @login_required
 def blog_list(request, role):
     """Blog list page for all roles (viewer, instructor, admin)"""
-    # Validate role
+    # Basic role validation - could be more robust but works for now
     if role not in ['viewer', 'instructor', 'admin']:
         raise Http404("Invalid role")
     
+    # Sort by published date, newest first
     posts = sorted(BLOG_POSTS, key=lambda p: p["published"], reverse=True)
     return render(request, f"{role}/blog_list.html", {"posts": posts, "role": role})
 

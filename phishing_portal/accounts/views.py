@@ -18,12 +18,13 @@ class CustomLogoutView(LogoutView):
 @login_required
 def home(request):
     # Get recent emails for the current user (if they have an email)
+    # TODO: Maybe add pagination or "view all" link later
     recent_emails = []
     if request.user.email:
         from campaigns.models import CampaignEmail
         recent_emails = CampaignEmail.objects.filter(
             recipient__recipient__email=request.user.email
-        ).select_related("campaign", "recipient", "recipient__recipient")[:5]
+        ).select_related("campaign", "recipient", "recipient__recipient")[:5]  # Limit to 5 for now
     
     context = {
         "recent_emails": recent_emails,
