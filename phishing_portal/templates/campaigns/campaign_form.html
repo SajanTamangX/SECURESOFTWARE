@@ -1,11 +1,193 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>New Campaign</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn-primary" type="submit">Save Campaign</button>
-</form>
-{% endblock %}
+<div style="max-width: 960px; margin: 0 auto;">
 
+  <div class="card" style="padding:22px 26px; border-radius:10px;">
+
+    <h1 style="margin:0 0 4px 0; font-size:22px;">New Campaign</h1>
+    <p style="margin:0 0 18px 0; font-size:13px; color:#6b7280;">
+      Configure a phishing simulation campaign: choose a template, optional schedule time, and status.
+    </p>
+
+    {% if form.non_field_errors %}
+      <div style="
+          margin-bottom:14px;
+          padding:10px 12px;
+          border-radius:8px;
+          background:#fef2f2;
+          border:1px solid #fecaca;
+          font-size:13px;
+          color:#991b1b;
+      ">
+        {% for error in form.non_field_errors %}
+          <div>{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="ns-form-grid">
+        <!-- Left column: main content -->
+        <div>
+          <div class="ns-field">
+            <label class="ns-field-label" for="{{ form.name.id_for_label }}">Campaign name</label>
+            {{ form.name }}
+            <p class="ns-field-help">
+              This is only visible to admins (e.g. "Payroll – Nov 2025 – Finance team").
+            </p>
+            {% for error in form.name.errors %}
+              <p class="ns-field-error">{{ error }}</p>
+            {% endfor %}
+          </div>
+
+          <div class="ns-field">
+            <label class="ns-field-label" for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            <p class="ns-field-help">
+              Short internal description of who this targets and what it is testing.
+            </p>
+            {% for error in form.description.errors %}
+              <p class="ns-field-error">{{ error }}</p>
+            {% endfor %}
+          </div>
+
+          <div class="ns-field">
+            <label class="ns-field-label" for="{{ form.email_template.id_for_label }}">Email template</label>
+            {{ form.email_template }}
+            <p class="ns-field-help">
+              Select one of your saved phishing email templates to use for this campaign.
+            </p>
+            {% for error in form.email_template.errors %}
+              <p class="ns-field-error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Right column: scheduling + status -->
+        <div>
+          <div class="ns-side-panel">
+            <h2 class="ns-side-title">Scheduling &amp; status</h2>
+            <p class="ns-side-text">
+              You can start with a draft and schedule the actual send later.
+            </p>
+
+            <div class="ns-field">
+              <label class="ns-field-label" for="{{ form.scheduled_for.id_for_label }}">Scheduled for</label>
+              {{ form.scheduled_for }}
+              <p class="ns-field-help">
+                Optional. If empty, you can trigger sending manually from the campaign detail page.
+              </p>
+              {% for error in form.scheduled_for.errors %}
+                <p class="ns-field-error">{{ error }}</p>
+              {% endfor %}
+            </div>
+
+            <div class="ns-field">
+              <label class="ns-field-label" for="{{ form.status.id_for_label }}">Status</label>
+              {{ form.status }}
+              <p class="ns-field-help">
+                Keep as <strong>Draft</strong> while you review, then move to Active when ready.
+              </p>
+              {% for error in form.status.errors %}
+                <p class="ns-field-error">{{ error }}</p>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:22px; display:flex; gap:10px;">
+        <button class="btn-primary" type="submit">
+          Save Campaign
+        </button>
+        <a href="{% url 'campaigns:campaign_list' %}"
+           style="font-size:13px; color:#4b5563; text-decoration:none;">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .ns-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.1fr);
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+  @media (max-width: 900px) {
+    .ns-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .ns-field {
+    margin-bottom: 14px;
+  }
+  .ns-field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+  }
+  .ns-field-help {
+    margin: 3px 0 0 0;
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .ns-field-error {
+    margin: 3px 0 0 0;
+    font-size: 12px;
+    color: #b91c1c;
+  }
+  .ns-side-panel {
+    background: #f9fafb;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    padding: 14px 16px 16px 16px;
+  }
+  .ns-side-title {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+  }
+  .ns-side-text {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  /* Dark mode support */
+  body.ns-dark .ns-field-label {
+    color: #e2e8f0 !important;
+  }
+  body.ns-dark .ns-field-help {
+    color: #9ca3af !important;
+  }
+  body.ns-dark .ns-field-error {
+    color: #f87171 !important;
+  }
+  body.ns-dark .ns-side-panel {
+    background: #334155 !important;
+    border-color: rgba(255,255,255,0.1) !important;
+  }
+  body.ns-dark .ns-side-title {
+    color: #f1f5f9 !important;
+  }
+  body.ns-dark .ns-side-text {
+    color: #cbd5e1 !important;
+  }
+  body.ns-dark a[style*="color:#4b5563"] {
+    color: #9ca3af !important;
+  }
+  body.ns-dark div[style*="background:#fef2f2"] {
+    background: #7f1d1d !important;
+    border-color: #ef4444 !important;
+    color: #fecaca !important;
+  }
+</style>
+
+{% endblock %}
