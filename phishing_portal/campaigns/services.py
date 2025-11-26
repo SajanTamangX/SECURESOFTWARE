@@ -43,25 +43,25 @@ def build_it_security_alert_body(email_template, ctx, click_url, report_url):
             <tr>
               <td style="padding:32px;">
                 <p style="margin:0 0 16px 0; font-size:16px; line-height:24px; color:#1f2937;">Hi {recipient_name},</p>
-                
+
                 <p style="margin:0 0 20px 0; font-size:15px; line-height:24px; color:#374151;">
                   We detected a new sign-in to your <strong style="color:#1f2937;">Indigo Employee Portal</strong> account 
-                  from a device or location we don't recognise.
-                </p>
-                
+        from a device or location we don't recognise.
+      </p>
+
                 <div style="background-color:#fef3c7; border-left:4px solid #f59e0b; padding:16px; margin:24px 0; border-radius:4px;">
                   <p style="margin:0; font-size:14px; line-height:20px; color:#92400e;">
                     <strong>Security Alert:</strong> If this was you, no further action is required. 
                     If this wasn't you, please review your recent activity immediately.
-                  </p>
+      </p>
                 </div>
                 
                 <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0;">
                   <tr>
                     <td align="center" style="padding:12px 0;">
                       <a href="{click_url}" style="background-color:#2563eb; color:#ffffff; text-decoration:none; padding:14px 32px; border-radius:6px; font-weight:600; font-size:15px; display:inline-block; box-shadow:0 2px 4px rgba(37,99,235,0.3);">
-                        Review Account Activity
-                      </a>
+          Review Account Activity
+        </a>
                     </td>
                   </tr>
                 </table>
@@ -119,21 +119,21 @@ def build_password_reset_body(email_template, ctx, click_url, report_url):
             <tr>
               <td style="padding:32px;">
                 <p style="margin:0 0 16px 0; font-size:16px; line-height:24px; color:#1f2937;">Hello {recipient_name},</p>
-                
+
                 <p style="margin:0 0 20px 0; font-size:15px; line-height:24px; color:#374151;">
                   A request was received to reset the password for your <strong style="color:#1f2937;">Indigo Single Sign-On</strong> account.
-                </p>
-                
+      </p>
+
                 <p style="margin:0 0 24px 0; font-size:15px; line-height:24px; color:#374151;">
                   If you made this request, please confirm it by clicking the button below. This link will expire in 24 hours.
-                </p>
-                
+      </p>
+
                 <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0;">
                   <tr>
                     <td align="center" style="padding:12px 0;">
                       <a href="{click_url}" style="background-color:#7c3aed; color:#ffffff; text-decoration:none; padding:14px 32px; border-radius:6px; font-weight:600; font-size:15px; display:inline-block; box-shadow:0 2px 4px rgba(124,58,237,0.3);">
-                        Confirm Password Reset
-                      </a>
+          Confirm Password Reset
+        </a>
                     </td>
                   </tr>
                 </table>
@@ -150,7 +150,7 @@ def build_password_reset_body(email_template, ctx, click_url, report_url):
                     Best regards,<br>
                     <strong style="color:#1f2937;">Indigo IT Support Team</strong><br>
                     <a href="mailto:support@indigo.co.uk" style="color:#7c3aed; text-decoration:none;">support@indigo.co.uk</a>
-                  </p>
+      </p>
                 </div>
               </td>
             </tr>
@@ -161,7 +161,7 @@ def build_password_reset_body(email_template, ctx, click_url, report_url):
                 <p style="margin:0; font-size:12px; line-height:18px; color:#6b7280; text-align:center;">
                   This password reset link expires in 24 hours for security purposes.<br>
                   If you didn't request this, please contact IT Support immediately.
-                </p>
+      </p>
               </td>
             </tr>
           </table>
@@ -198,15 +198,15 @@ def build_payroll_body(email_template, ctx, click_url, report_url):
             <tr>
               <td style="padding:32px;">
                 <p style="margin:0 0 16px 0; font-size:16px; line-height:24px; color:#1f2937;">Dear {recipient_name},</p>
-                
+
                 <p style="margin:0 0 20px 0; font-size:15px; line-height:24px; color:#374151;">
                   As part of our end-of-month payroll checks, we were unable to automatically verify your current bank details.
-                </p>
-                
+      </p>
+
                 <p style="margin:0 0 24px 0; font-size:15px; line-height:24px; color:#374151;">
                   To avoid any delay to your salary payment, please review and confirm your details in the Employee Payroll Portal.
-                </p>
-                
+      </p>
+
                 <div style="background-color:#d1fae5; border-left:4px solid #10b981; padding:16px; margin:24px 0; border-radius:4px;">
                   <p style="margin:0; font-size:14px; line-height:20px; color:#065f46;">
                     <strong>Action Required:</strong> Please complete this verification within 48 hours to ensure timely payment processing.
@@ -217,23 +217,23 @@ def build_payroll_body(email_template, ctx, click_url, report_url):
                   <tr>
                     <td align="center" style="padding:12px 0;">
                       <a href="{click_url}" style="background-color:#059669; color:#ffffff; text-decoration:none; padding:14px 32px; border-radius:6px; font-weight:600; font-size:15px; display:inline-block; box-shadow:0 2px 4px rgba(5,150,105,0.3);">
-                        Review Payroll Details
-                      </a>
+          Review Payroll Details
+        </a>
                     </td>
                   </tr>
                 </table>
-                
+
                 <p style="margin:24px 0 0 0; font-size:14px; line-height:20px; color:#6b7280;">
-                  This verification should take less than two minutes to complete.
-                </p>
-                
+        This verification should take less than two minutes to complete.
+      </p>
+
                 <div style="border-top:1px solid #e5e7eb; margin-top:32px; padding-top:24px;">
                   <p style="margin:0 0 8px 0; font-size:14px; line-height:20px; color:#6b7280;">
                     Best regards,<br>
                     <strong style="color:#1f2937;">Indigo Payroll Team</strong><br>
                     <a href="mailto:payroll@indigo.co.uk" style="color:#059669; text-decoration:none;">payroll@indigo.co.uk</a>
                   </p>
-                </div>
+    </div>
               </td>
             </tr>
             
@@ -280,15 +280,15 @@ def build_delivery_failure_body(email_template, ctx, click_url, report_url):
             <tr>
               <td style="padding:32px;">
                 <p style="margin:0 0 16px 0; font-size:16px; line-height:24px; color:#1f2937;">Hi {recipient_name},</p>
-                
+
                 <p style="margin:0 0 20px 0; font-size:15px; line-height:24px; color:#374151;">
                   We attempted to deliver a package to your office address but were unable to complete the delivery.
-                </p>
-                
+      </p>
+
                 <p style="margin:0 0 24px 0; font-size:15px; line-height:24px; color:#374151;">
                   Please confirm your delivery preferences so we can re-schedule the drop-off at your earliest convenience.
-                </p>
-                
+      </p>
+
                 <div style="background-color:#fff7ed; border-left:4px solid #f97316; padding:16px; margin:24px 0; border-radius:4px;">
                   <p style="margin:0; font-size:14px; line-height:20px; color:#9a3412;">
                     <strong>Urgent:</strong> If no action is taken within 48 hours, your package may be returned to the sender.
@@ -299,8 +299,8 @@ def build_delivery_failure_body(email_template, ctx, click_url, report_url):
                   <tr>
                     <td align="center" style="padding:12px 0;">
                       <a href="{click_url}" style="background-color:#ea580c; color:#ffffff; text-decoration:none; padding:14px 32px; border-radius:6px; font-weight:600; font-size:15px; display:inline-block; box-shadow:0 2px 4px rgba(234,88,12,0.3);">
-                        Manage Delivery
-                      </a>
+          Manage Delivery
+        </a>
                     </td>
                   </tr>
                 </table>
@@ -321,7 +321,7 @@ def build_delivery_failure_body(email_template, ctx, click_url, report_url):
                 <p style="margin:0; font-size:12px; line-height:18px; color:#6b7280; text-align:center;">
                   Track your packages through the official Indigo Courier Service portal.<br>
                   For questions, contact our customer service team.
-                </p>
+      </p>
               </td>
             </tr>
           </table>
@@ -358,12 +358,12 @@ def build_hr_policy_body(email_template, ctx, click_url, report_url):
             <tr>
               <td style="padding:32px;">
                 <p style="margin:0 0 16px 0; font-size:16px; line-height:24px; color:#1f2937;">Dear {recipient_name},</p>
-                
+
                 <p style="margin:0 0 20px 0; font-size:15px; line-height:24px; color:#374151;">
                   We have recently updated our <strong style="color:#1f2937;">Employee Code of Conduct and Remote Working Policy</strong>. 
-                  All staff are required to review and acknowledge the updated policy.
-                </p>
-                
+        All staff are required to review and acknowledge the updated policy.
+      </p>
+
                 <div style="background-color:#fce7f3; border-left:4px solid #ec4899; padding:16px; margin:24px 0; border-radius:4px;">
                   <p style="margin:0; font-size:14px; line-height:20px; color:#9f1239;">
                     <strong>Mandatory Action:</strong> This acknowledgement is required and will form part of your employment record. 
@@ -375,8 +375,8 @@ def build_hr_policy_body(email_template, ctx, click_url, report_url):
                   <tr>
                     <td align="center" style="padding:12px 0;">
                       <a href="{click_url}" style="background-color:#be185d; color:#ffffff; text-decoration:none; padding:14px 32px; border-radius:6px; font-weight:600; font-size:15px; display:inline-block; box-shadow:0 2px 4px rgba(190,24,93,0.3);">
-                        Review Policy &amp; Acknowledge
-                      </a>
+          Review Policy &amp; Acknowledge
+        </a>
                     </td>
                   </tr>
                 </table>
@@ -397,7 +397,7 @@ def build_hr_policy_body(email_template, ctx, click_url, report_url):
                 <p style="margin:0; font-size:12px; line-height:18px; color:#6b7280; text-align:center;">
                   Policy updates are communicated through official HR channels only.<br>
                   If you have questions, please contact the People &amp; Culture team directly.
-                </p>
+      </p>
               </td>
             </tr>
           </table>
