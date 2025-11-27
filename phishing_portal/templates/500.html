@@ -1,10 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>500 Server Error - SecureSoftware Portal</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Server Error | SecureSoftware Portal</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background: linear-gradient(180deg, #3f708a, #83afc6);
             color: #f7f9fb;
             margin: 0;
@@ -13,45 +21,282 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            overflow: hidden;
         }
+
+        /* Animated background elements */
+        .bg-decoration {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .bg-circle:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            top: -150px;
+            left: -150px;
+            animation-delay: 0s;
+        }
+
+        .bg-circle:nth-child(2) {
+            width: 200px;
+            height: 200px;
+            bottom: -100px;
+            right: -100px;
+            animation-delay: 5s;
+        }
+
+        .bg-circle:nth-child(3) {
+            width: 150px;
+            height: 150px;
+            top: 50%;
+            right: 10%;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.1;
+            }
+            50% {
+                transform: translate(50px, -50px) scale(1.1);
+                opacity: 0.15;
+            }
+        }
+
         .error-container {
             text-align: center;
             background: #ffffff;
             color: #123;
-            padding: 3rem;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-            max-width: 600px;
+            padding: 4rem 3rem;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+            max-width: 650px;
+            width: 90%;
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 0.6s ease-out;
         }
-        h1 {
-            font-size: 4rem;
-            margin: 0;
-            color: #3f708a;
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        h2 {
-            color: #477e9c;
-            margin-top: 1rem;
-        }
-        a {
+
+        .error-icon {
+            font-size: 6rem;
+            margin-bottom: 1rem;
             display: inline-block;
+            animation: shake 2s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0) rotate(0deg);
+            }
+            10%, 30%, 50%, 70%, 90% {
+                transform: translateX(-5px) rotate(-5deg);
+            }
+            20%, 40%, 60%, 80% {
+                transform: translateX(5px) rotate(5deg);
+            }
+        }
+
+        .error-code {
+            font-size: 5rem;
+            font-weight: 700;
+            margin: 0;
+            color: #d32f2f;
+            line-height: 1;
+            background: linear-gradient(135deg, #d32f2f, #f44336);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            color: #d32f2f;
+            margin-top: 1rem;
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+
+        .error-message {
+            color: #666;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .error-suggestions {
             margin-top: 2rem;
-            padding: 0.6rem 1.5rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e6ee;
+            text-align: left;
+        }
+
+        .error-suggestions h3 {
+            color: #d32f2f;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
+
+        .suggestions-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .suggestions-list li {
+            color: #666;
+            padding: 0.5rem 0;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .suggestions-list li:before {
+            content: "→";
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .action-buttons {
+            margin-top: 2.5rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 2rem;
             background: #477e9c;
             color: #fff;
             text-decoration: none;
             border-radius: 999px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
         }
-        a:hover {
+
+        .btn:hover {
             background: #6098b6;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(71, 126, 156, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #477e9c;
+            border: 2px solid #477e9c;
+        }
+
+        .btn-secondary:hover {
+            background: #f5f8fa;
+            border-color: #6098b6;
+            color: #6098b6;
+        }
+
+        .btn-retry {
+            background: #d32f2f;
+        }
+
+        .btn-retry:hover {
+            background: #f44336;
+            box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4);
+        }
+
+        /* Responsive design */
+        @media (max-width: 640px) {
+            .error-container {
+                padding: 3rem 2rem;
+            }
+
+            .error-icon {
+                font-size: 4rem;
+            }
+
+            .error-code {
+                font-size: 3.5rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .error-message {
+                font-size: 1rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="bg-decoration">
+        <div class="bg-circle"></div>
+        <div class="bg-circle"></div>
+        <div class="bg-circle"></div>
+    </div>
+
     <div class="error-container">
-        <h1>500</h1>
+        <div class="error-icon">⚠️</div>
+        <h1 class="error-code">500</h1>
         <h2>Server Error</h2>
-        <p>Something went wrong on our end. Please try again later.</p>
-        <a href="/">Return to Home</a>
+        <p class="error-message">
+            We're sorry, but something went wrong on our end. 
+            Our team has been notified and is working to fix the issue.
+        </p>
+
+        <div class="error-suggestions">
+            <h3>What you can do:</h3>
+            <ul class="suggestions-list">
+                <li>Try refreshing the page in a few moments</li>
+                <li>Go back to the previous page</li>
+                <li>Return to the home page</li>
+                <li>Contact support if the problem persists</li>
+            </ul>
+        </div>
+
+        <div class="action-buttons">
+            <a href="/" class="btn">Return to Home</a>
+            <a href="javascript:location.reload()" class="btn btn-retry">Try Again</a>
+            <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+        </div>
     </div>
 </body>
 </html>

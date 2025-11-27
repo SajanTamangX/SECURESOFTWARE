@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseNotFound, Http404
 from .forms import LoginForm
 from .decorators import role_required
 
@@ -37,4 +38,34 @@ def instructor_dashboard(request):
     return render(request, "instructor_dashboard.html", {
         "message": "Welcome to the Instructor Dashboard! Only Admins and Instructors can access this page."
     })
+
+
+def custom_404_view(request, exception):
+    """Custom 404 handler that shows our professional error page"""
+    response = render(request, "404.html", {})
+    response.status_code = 404
+    return response
+
+
+def custom_500_view(request):
+    """Custom 500 handler that shows our professional error page"""
+    response = render(request, "500.html", {})
+    response.status_code = 500
+    return response
+
+
+def test_404(request):
+    """Test view to preview the 404 page - visit /test-404/ to see it"""
+    # Directly render the 404 template for preview (works even when DEBUG=True)
+    response = render(request, "404.html", {})
+    response.status_code = 404
+    return response
+
+
+def test_500(request):
+    """Test view to preview the 500 page - visit /test-500/ to see it"""
+    # Directly render the 500 template for preview (works even when DEBUG=True)
+    response = render(request, "500.html", {})
+    response.status_code = 500
+    return response
 
