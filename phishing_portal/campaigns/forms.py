@@ -77,7 +77,7 @@ class RecipientUploadForm(forms.Form):
             
             # Validate email format and check for duplicates
             emails_seen = set()
-            row_num = 1  # Header is row 0, data starts at 1
+            row_num = 1  # Header is row 0, data rows start at 1
             
             for row in reader:
                 row_num += 1
@@ -103,14 +103,16 @@ class RecipientUploadForm(forms.Form):
                     )
                 emails_seen.add(email.lower())
             
-            if row_num == 1:  # Only header row
+            if row_num == 1:  # Only header row, no actual data
                 raise forms.ValidationError("CSV file contains no data rows.")
                 
         except UnicodeDecodeError:
             raise forms.ValidationError("CSV file must be UTF-8 encoded.")
         except csv.Error as e:
+            # Handle CSV parsing errors
             raise forms.ValidationError(f"Invalid CSV format: {str(e)}")
         except Exception as e:
+            # Re-raise ValidationErrors, wrap others
             if isinstance(e, forms.ValidationError):
                 raise
             raise forms.ValidationError(f"Error reading CSV file: {str(e)}")

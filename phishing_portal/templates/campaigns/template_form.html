@@ -1,11 +1,215 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>New Email Template</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn-primary" type="submit">Save Template</button>
-</form>
-{% endblock %}
+<div style="max-width: 960px; margin: 0 auto;">
 
+  <div class="card" style="padding:22px 26px; border-radius:10px;">
+
+    <h1 style="margin:0 0 4px 0; font-size:22px;">New Email Template</h1>
+    <p style="margin:0 0 18px 0; font-size:13px; color:#6b7280;">
+      Create a reusable phishing email template that can be attached to one or more campaigns.
+    </p>
+
+    {% if form.non_field_errors %}
+      <div style="
+          margin-bottom:14px;
+          padding:10px 12px;
+          border-radius:8px;
+          background:#fef2f2;
+          border:1px solid #fecaca;
+          font-size:13px;
+          color:#991b1b;
+      ">
+        {% for error in form.non_field_errors %}
+          <div>{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+    {% csrf_token %}
+
+      <div class="ns-form-grid">
+        <!-- Left column: core email content -->
+        <div>
+          <div class="ns-field">
+            <label class="ns-field-label" for="{{ form.name.id_for_label }}">Internal name</label>
+            {{ form.name }}
+            <p class="ns-field-help">
+              Only visible to admins (e.g. "Payroll verification – Indigo – v1").
+            </p>
+            {% for error in form.name.errors %}
+              <p class="ns-field-error">{{ error }}</p>
+            {% endfor %}
+          </div>
+
+          <div class="ns-field">
+            <label class="ns-field-label" for="{{ form.subject.id_for_label }}">Email subject line</label>
+            {{ form.subject }}
+            <p class="ns-field-help">
+              This is what the user sees in their inbox. Keep it short and realistic.
+            </p>
+            {% for error in form.subject.errors %}
+              <p class="ns-field-error">{{ error }}</p>
+            {% endfor %}
+          </div>
+
+          <div class="ns-field">
+            <label class="ns-field-label" for="{{ form.body.id_for_label }}">Body</label>
+            {{ form.body }}
+            <p class="ns-field-help">
+              Write the main email content. Placeholders like <code>{% templatetag openvariable %} first_name {% templatetag closevariable %}</code> are allowed.
+            </p>
+            {% for error in form.body.errors %}
+              <p class="ns-field-error">{{ error }}</p>
+            {% endfor %}
+          </div>
+
+          <div class="ns-field">
+            <label class="ns-field-label" for="{{ form.learning_points.id_for_label }}">Learning points</label>
+            {{ form.learning_points }}
+            <p class="ns-field-help">
+              Short explanation shown on the landing page after the user reports or completes the scenario.
+            </p>
+            {% for error in form.learning_points.errors %}
+              <p class="ns-field-error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Right column: scenario + tips -->
+        <div>
+          <div class="ns-side-panel">
+            <h2 class="ns-side-title">Scenario</h2>
+            <p class="ns-side-text">
+              Choose which built-in layout this template should use (IT alert, payroll, delivery, etc.).
+            </p>
+
+            <div class="ns-field">
+              <label class="ns-field-label" for="{{ form.scenario.id_for_label }}">Scenario type</label>
+              {{ form.scenario }}
+              {% for error in form.scenario.errors %}
+                <p class="ns-field-error">{{ error }}</p>
+              {% endfor %}
+            </div>
+
+            <hr style="border:none; border-top:1px solid #e5e7eb; margin:10px 0;">
+
+            <h3 style="margin:0 0 4px 0; font-size:13px;">Tips for realistic templates</h3>
+            <ul style="margin:4px 0 0 0; padding-left:18px; font-size:12px; color:#6b7280;">
+              <li>Mirror real internal tone and branding (without copying exact wording).</li>
+              <li>Include one or two clear red flags (URL, sender, urgency).</li>
+              <li>Keep reading time under 30–40 seconds for most staff.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:22px; display:flex; gap:10px;">
+        <button class="btn-primary" type="submit">
+          Save Template
+        </button>
+        <a href="{% url 'campaigns:template_list' %}"
+           style="font-size:13px; color:#4b5563; text-decoration:none;">
+          Cancel
+        </a>
+      </div>
+</form>
+  </div>
+</div>
+
+<style>
+  .ns-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.1fr);
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+  @media (max-width: 900px) {
+    .ns-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .ns-field {
+    margin-bottom: 14px;
+  }
+  .ns-field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+  }
+  .ns-field-help {
+    margin: 3px 0 0 0;
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .ns-field-error {
+    margin: 3px 0 0 0;
+    font-size: 12px;
+    color: #b91c1c;
+  }
+  .ns-side-panel {
+    background: #f9fafb;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    padding: 14px 16px 16px 16px;
+  }
+  .ns-side-title {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+  }
+  .ns-side-text {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  /* Dark mode support */
+  body.ns-dark .ns-field-label {
+    color: #e2e8f0 !important;
+  }
+  body.ns-dark .ns-field-help {
+    color: #9ca3af !important;
+  }
+  body.ns-dark .ns-field-error {
+    color: #f87171 !important;
+  }
+  body.ns-dark .ns-side-panel {
+    background: #334155 !important;
+    border-color: rgba(255,255,255,0.1) !important;
+  }
+  body.ns-dark .ns-side-title {
+    color: #f1f5f9 !important;
+  }
+  body.ns-dark .ns-side-text {
+    color: #cbd5e1 !important;
+  }
+  body.ns-dark a[style*="color:#4b5563"] {
+    color: #9ca3af !important;
+  }
+  body.ns-dark div[style*="background:#fef2f2"] {
+    background: #7f1d1d !important;
+    border-color: #ef4444 !important;
+    color: #fecaca !important;
+  }
+  body.ns-dark ul[style*="color:#6b7280"] {
+    color: #9ca3af !important;
+  }
+  body.ns-dark h3[style*="font-size:13px"] {
+    color: #f1f5f9 !important;
+  }
+  body.ns-dark hr[style*="border-top:1px solid #e5e7eb"] {
+    border-top-color: rgba(255,255,255,0.1) !important;
+  }
+  body.ns-dark code {
+    background: #1e293b !important;
+    color: #fca5a5 !important;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+</style>
+
+{% endblock %}

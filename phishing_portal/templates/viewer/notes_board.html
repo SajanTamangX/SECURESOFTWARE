@@ -102,5 +102,106 @@
 
   </div>
 </div>
+
+<style>
+/* Dark mode support for sticky notes board */
+body.ns-dark div[style*="background:#ffffff"] {
+  background: #1e293b !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3) !important;
+}
+
+body.ns-dark div[style*="background:#fffbea"] {
+  background: #334155 !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3) !important;
+}
+
+body.ns-dark h1,
+body.ns-dark h2 {
+  color: #f1f5f9 !important;
+}
+
+body.ns-dark p[style*="color:#555"] {
+  color: #cbd5e1 !important;
+}
+
+body.ns-dark p[style*="color:#777"] {
+  color: #9ca3af !important;
+}
+
+body.ns-dark label {
+  color: #e2e8f0 !important;
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+body.ns-dark input[type="text"],
+body.ns-dark textarea,
+body.ns-dark select {
+  background: #475569 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #f1f5f9 !important;
+}
+
+body.ns-dark input[type="text"]:focus,
+body.ns-dark textarea:focus,
+body.ns-dark select:focus {
+  outline: none;
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
+}
+
+body.ns-dark button[style*="background:#f0cf5b"] {
+  background: #f59e0b !important;
+  color: #1e293b !important;
+}
+
+body.ns-dark button[style*="background:#f0cf5b"]:hover {
+  background: #d97706 !important;
+}
+
+body.ns-dark button[style*="color:#0b57d0"] {
+  color: #60a5fa !important;
+}
+
+body.ns-dark button[style*="color:#0b57d0"]:hover {
+  color: #93c5fd !important;
+}
+
+body.ns-dark li[style*="background: #f3f3f3"],
+body.ns-dark li[style*="background:#f3f3f3"] {
+  background: #475569 !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+body.ns-dark li[style*="background: #fffbea"],
+body.ns-dark li[style*="background:#fffbea"] {
+  background: #334155 !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+body.ns-dark strong[style*="color:#777"] {
+  color: #9ca3af !important;
+}
+
+body.ns-dark p[style*="color:#555"],
+body.ns-dark p[style*="color:#888"] {
+  color: #9ca3af !important;
+}
+
+body.ns-dark span[style*="color:#b3261e"] {
+  color: #f87171 !important;
+}
+
+body.ns-dark span[style*="color:#b38f00"] {
+  color: #fbbf24 !important;
+}
+
+body.ns-dark span[style*="color:#2e7d32"] {
+  color: #4ade80 !important;
+}
+</style>
 {% endblock %}
 

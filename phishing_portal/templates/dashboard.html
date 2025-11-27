@@ -23,9 +23,29 @@
 </div>
 
 <h3>Events (Last 7 Days)</h3>
-<div style="background: #fff; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;">
+<div class="chart-container" style="background: #fff; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;">
     <canvas id="eventsChart" width="400" height="150"></canvas>
 </div>
+
+<style>
+body.ns-dark .chart-container {
+    background: #1e293b !important;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+body.ns-dark h2,
+body.ns-dark h3 {
+    color: #f1f5f9 !important;
+}
+
+body.ns-dark .top-campaigns-table a {
+    color: #60a5fa !important;
+}
+
+body.ns-dark .top-campaigns-table td {
+    color: #cbd5e1 !important;
+}
+</style>
 
 <h3>Top 5 Campaigns by Clicks</h3>
 <table class="table top-campaigns-table">
