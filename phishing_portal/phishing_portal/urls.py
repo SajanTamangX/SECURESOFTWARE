@@ -6,6 +6,11 @@ from django.urls import path, include
 from campaigns import views_admin, views_dashboard, views_export
 from accounts import views as accounts_views
 
+# Customize admin site
+admin.site.site_header = "Phishing Portal Administration"
+admin.site.site_title = "Phishing Portal Admin"
+admin.site.index_title = "Welcome to Phishing Portal Administration"
+
 urlpatterns = [
     path("", include("accounts.urls")),
     path("campaigns/", include("campaigns.urls")),
