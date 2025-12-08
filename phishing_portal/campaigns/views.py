@@ -1,15 +1,13 @@
-import csv
-import io
 import hashlib
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.utils.html import strip_tags
 
 from accounts.decorators import role_required
 from .forms import EmailTemplateForm, CampaignForm, RecipientUploadForm
@@ -23,11 +21,28 @@ from django.http import HttpResponseForbidden
 
 @login_required
 def template_list(request):
+    """
+    List email templates with role-based filtering:
+    - ADMIN/INSTRUCTOR: See all templates
+    - VIEWER: See only templates they created (if any)
+    """
     templates = EmailTemplate.objects.all()
     
-    # Search functionality
-    q = request.GET.get("q", "")
+    # Role-based filtering: VIEWERs only see templates they created
+    if request.user.role == "VIEWER":
+        templates = templates.filter(created_by=request.user)
+    
+    # Search functionality with input normalization
+    q = request.GET.get("q", "").strip()[:100]  # Strip whitespace, max 100 chars
     if q:
+        # Log suspicious input length attempts
+        original_q = request.GET.get("q", "")
+        if len(original_q) > 100:
+            log_action(
+                request,
+                "Suspicious input length - search query",
+                f"User: {request.user.username}, Length: {len(original_q)}"
+            )
         templates = templates.filter(name__icontains=q)
     
     # Pagination - TODO: maybe make page size configurable?
@@ -61,11 +76,28 @@ def template_create(request):
 
 @login_required
 def campaign_list(request):
+    """
+    List campaigns with role-based filtering:
+    - ADMIN/INSTRUCTOR: See all campaigns
+    - VIEWER: See only campaigns they created (if any)
+    """
     campaigns = Campaign.objects.select_related("email_template", "created_by")
     
-    # Search
-    q = request.GET.get("q", "")
+    # Role-based filtering: VIEWERs only see campaigns they created
+    if request.user.role == "VIEWER":
+        campaigns = campaigns.filter(created_by=request.user)
+    
+    # Search with input normalization
+    q = request.GET.get("q", "").strip()[:100]  # Strip whitespace, max 100 chars
     if q:
+        # Log suspicious input length attempts
+        original_q = request.GET.get("q", "")
+        if len(original_q) > 100:
+            log_action(
+                request,
+                "Suspicious input length - search query",
+                f"User: {request.user.username}, Length: {len(original_q)}"
+            )
         campaigns = campaigns.filter(name__icontains=q)
     
     # Pagination
@@ -98,10 +130,33 @@ def campaign_create(request):
 
 @login_required
 def campaign_detail(request, pk):
+    """
+    Campaign detail view with object-level access control:
+    - ADMIN/INSTRUCTOR: Can view all campaigns
+    - VIEWER: Can only view campaigns they created
+    """
     campaign = get_object_or_404(
         Campaign.objects.select_related("email_template", "created_by"),
         pk=pk,
     )
+    
+    # Object-level access control: VIEWERs can only see campaigns they created
+    if request.user.role == "VIEWER" and campaign.created_by != request.user:
+        log_action(
+            request,
+            "Permission denied - unauthorized campaign access",
+            f"User: {request.user.username}, Attempted campaign ID: {pk}, "
+            f"Campaign creator: {campaign.created_by.username}"
+        )
+        raise Http404("Campaign not found")  # Return 404 instead of 403 to prevent IDOR enumeration
+    
+    # Log successful access
+    log_action(
+        request,
+        "Viewed campaign detail",
+        f"Campaign: {campaign.name} (ID: {campaign.id})"
+    )
+    
     recipients = (
         CampaignRecipient.objects
         .select_related("recipient")
@@ -135,57 +190,69 @@ def campaign_detail(request, pk):
 
 @role_required("ADMIN", "INSTRUCTOR")
 def upload_recipients(request, pk):
+    """Upload recipients from CSV file - delegates to service layer for processing"""
     campaign = get_object_or_404(Campaign, pk=pk)
     if request.method == "POST":
         form = RecipientUploadForm(request.POST, request.FILES)
         if form.is_valid():
             csv_file = form.cleaned_data["csv_file"]
-            decoded = csv_file.read().decode("utf-8")
-            reader = csv.DictReader(io.StringIO(decoded))
-
-            created_count = 0
-            linked_count = 0
-
-            with transaction.atomic():
-                for row in reader:
-                    email = row.get("email", "").strip()
-                    if not email:
-                        continue
-
-                    first_name = row.get("first_name", "").strip()
-                    last_name = row.get("last_name", "").strip()
-                    department = row.get("department", "").strip()
-
-                    recipient, created = Recipient.objects.get_or_create(
-                        email=email,
-                        defaults={
-                            "first_name": first_name,
-                            "last_name": last_name,
-                            "department": department,
-                        },
-                    )
-
-                    if created:
-                        created_count += 1
-
-                    _, link_created = CampaignRecipient.objects.get_or_create(
-                        campaign=campaign,
-                        recipient=recipient,
-                    )
-
-                    if link_created:
-                        linked_count += 1
-
-            log_action(
-                request,
-                "Uploaded recipients",
-                f"Campaign: {campaign.name} (ID: {campaign.id}) - {created_count} new, {linked_count} linked"
-            )
-            messages.success(
-                request,
-                f"Upload complete. {created_count} new recipients, "
-                f"{linked_count} linked to this campaign.",
-            )
+            
+            # Delegate CSV processing to service layer
+            from .services import import_recipients_from_csv
+            
+            try:
+                created_count, linked_count, error_rows, error_details = import_recipients_from_csv(
+                    csv_file,
+                    campaign,
+                    request.user,
+                    log_action_func=lambda req, action, details: log_action(req, action, details)
+                )
+                
+                # Build success/error message
+                success_msg = (
+                    f"Upload complete. {created_count} new recipients, "
+                    f"{linked_count} linked to this campaign."
+                )
+                
+                if error_rows:
+                    error_msg = f" {len(error_rows)} row(s) had errors and were skipped."
+                    if len(error_rows) <= 5:
+                        # Show details for small number of errors
+                        error_details_str = "; ".join([
+                            f"Row {row}: {error_details[row]}"
+                            for row in error_rows[:5]
+                        ])
+                        error_msg += f" Details: {error_details_str}"
+                    success_msg += error_msg
+                    messages.warning(request, success_msg)
+                else:
+                    messages.success(request, success_msg)
+                
+                log_action(
+                    request,
+                    "Uploaded recipients",
+                    f"Campaign: {campaign.name} (ID: {campaign.id}) - "
+                    f"{created_count} new, {linked_count} linked, "
+                    f"{len(error_rows)} errors"
+                )
+                
+            except ValueError as e:
+                # Service layer validation errors
+                messages.error(request, f"CSV import failed: {str(e)}")
+                log_action(
+                    request,
+                    "CSV import failed",
+                    f"Campaign: {campaign.name} (ID: {campaign.id}), Error: {str(e)}"
+                )
+            except Exception as e:
+                # Unexpected errors
+                messages.error(request, "An unexpected error occurred during CSV import.")
+                log_action(
+                    request,
+                    "CSV import error",
+                    f"Campaign: {campaign.name} (ID: {campaign.id}), Error: {str(e)}"
+                )
+            
             return redirect("campaigns:campaign_detail", pk=campaign.pk)
     else:
         form = RecipientUploadForm()
@@ -337,15 +404,35 @@ def inbox(request):
 
 @login_required
 def inbox_detail(request, pk: int):
+    """
+    Email detail view with enhanced access control:
+    - All users can only view emails sent to their own email address
+    - Logs access attempts for security auditing
+    """
     email_obj = get_object_or_404(
         CampaignEmail.objects.select_related("campaign", "recipient", "recipient__recipient"),
         pk=pk,
     )
 
     user = request.user
-    # Safety check: VIEWERs can only see messages sent to their own email
-    if user.email and email_obj.recipient.recipient.email != user.email and user.role == "VIEWER":
-        return HttpResponseForbidden("You are not allowed to view this email.")
+    recipient_email = email_obj.recipient.recipient.email
+    
+    # Access control: Users can only see emails sent to their own email address
+    if not user.email or recipient_email != user.email:
+        log_action(
+            request,
+            "Permission denied - unauthorized email access",
+            f"User: {user.username}, User email: {user.email or 'none'}, "
+            f"Attempted email ID: {pk}, Recipient email: {recipient_email}"
+        )
+        raise Http404("Email not found")  # Return 404 instead of 403 to prevent IDOR enumeration
+    
+    # Log successful access
+    log_action(
+        request,
+        "Viewed email detail",
+        f"Email ID: {pk}, Subject: {email_obj.subject[:100]}, Campaign: {email_obj.campaign.name}"
+    )
 
     if not email_obj.is_read:
         email_obj.is_read = True
@@ -357,16 +444,37 @@ def inbox_detail(request, pk: int):
 @login_required
 @require_POST
 def toggle_email_read(request, pk: int):
-    email_obj = get_object_or_404(CampaignEmail, pk=pk)
+    """
+    Toggle email read status with access control:
+    - Users can only toggle emails sent to their own email address
+    """
+    email_obj = get_object_or_404(
+        CampaignEmail.objects.select_related("recipient", "recipient__recipient"),
+        pk=pk
+    )
 
     user = request.user
-    # VIEWERs can only toggle their own emails
-    if user.role == "VIEWER" and user.email:
-        if email_obj.recipient.recipient.email != user.email:
-            return HttpResponseForbidden("You are not allowed to modify this email.")
-
+    recipient_email = email_obj.recipient.recipient.email
+    
+    # Access control: Users can only modify emails sent to their own email address
+    if not user.email or recipient_email != user.email:
+        log_action(
+            request,
+            "Permission denied - unauthorized email modification",
+            f"User: {user.username}, User email: {user.email or 'none'}, "
+            f"Attempted email ID: {pk}, Recipient email: {recipient_email}"
+        )
+        raise Http404("Email not found")
+    
     email_obj.is_read = not email_obj.is_read
     email_obj.save(update_fields=["is_read"])
+    
+    log_action(
+        request,
+        "Toggled email read status",
+        f"Email ID: {pk}, New status: {'read' if email_obj.is_read else 'unread'}"
+    )
+    
     return redirect("campaigns:inbox")
 
 
@@ -409,20 +517,36 @@ def blog_detail(request, role, slug):
 
 @login_required
 def viewer_notes_board(request):
+    """Viewer sticky notes board with HTML stripping for security"""
     from .models import StickyNote
     
     notes = StickyNote.objects.filter(user=request.user).order_by("is_done", "-created_at")
 
     if request.method == "POST":
-        title = request.POST.get("title", "").strip()
-        body = request.POST.get("body", "").strip()
+        # Get and sanitize input
+        title_raw = request.POST.get("title", "").strip()
+        body_raw = request.POST.get("body", "").strip()
         priority = request.POST.get("priority", "medium")
+        
+        # Strip HTML tags from user input (plain text only)
+        title = strip_tags(title_raw)[:120]  # Enforce max_length from model
+        body = strip_tags(body_raw)  # TextField has no max_length, but strip HTML
+        
+        # Validate priority
+        if priority not in ['low', 'medium', 'high']:
+            priority = 'medium'
+        
         if title:
             StickyNote.objects.create(
                 user=request.user,
                 title=title,
                 body=body,
                 priority=priority,
+            )
+            log_action(
+                request,
+                "Created sticky note",
+                f"Title: {title[:50]}"
             )
         return redirect("campaigns:viewer_notes_board")
 

@@ -144,6 +144,9 @@ IS_PRODUCTION = os.environ.get("DJANGO_PRODUCTION", "0") == "1"
 
 CSRF_COOKIE_SECURE = IS_PRODUCTION
 SESSION_COOKIE_SECURE = IS_PRODUCTION
+SESSION_COOKIE_SAMESITE = "Lax"  # Prevents CSRF while allowing normal navigation
+SESSION_COOKIE_AGE = 1800  # 30 minutes (1800 seconds)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session persists across browser restarts (controlled by SESSION_COOKIE_AGE)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_HSTS_SECONDS = 31536000 if IS_PRODUCTION else 0  # 1 year in production

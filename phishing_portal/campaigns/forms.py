@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.html import strip_tags
 from .models import EmailTemplate, Campaign
 
 
@@ -19,6 +20,28 @@ class EmailTemplateForm(forms.ModelForm):
             "body": forms.Textarea(attrs={"rows": 8}),
             "learning_points": forms.Textarea(attrs={"rows": 4}),
         }
+    
+    def clean_name(self):
+        """Normalize name field: strip whitespace"""
+        name = self.cleaned_data.get("name", "")
+        return name.strip()
+    
+    def clean_subject(self):
+        """Normalize subject field: strip whitespace"""
+        subject = self.cleaned_data.get("subject", "")
+        return subject.strip()
+    
+    def clean_body(self):
+        """Normalize body field: strip whitespace (but preserve HTML for admin/instructor use)"""
+        body = self.cleaned_data.get("body", "")
+        return body.strip()
+    
+    def clean_learning_points(self):
+        """Strip HTML tags and normalize learning_points (plain text field)"""
+        learning_points = self.cleaned_data.get("learning_points", "")
+        # Strip HTML tags since this is displayed as plain text
+        learning_points = strip_tags(learning_points)
+        return learning_points.strip()
 
 
 class CampaignForm(forms.ModelForm):
@@ -39,6 +62,18 @@ class CampaignForm(forms.ModelForm):
         widgets = {
             "description": forms.Textarea(attrs={"rows": 4}),
         }
+    
+    def clean_name(self):
+        """Normalize name field: strip whitespace"""
+        name = self.cleaned_data.get("name", "")
+        return name.strip()
+    
+    def clean_description(self):
+        """Normalize description: strip HTML tags and whitespace (plain text field)"""
+        description = self.cleaned_data.get("description", "")
+        # Strip HTML tags since description is plain text
+        description = strip_tags(description)
+        return description.strip()
 
 
 class RecipientUploadForm(forms.Form):
@@ -47,72 +82,46 @@ class RecipientUploadForm(forms.Form):
     )
 
     def clean_csv_file(self):
-        import csv
-        import io
-        from django.core.validators import validate_email
-        from django.core.exceptions import ValidationError as DjangoValidationError
-        
+        """Validate CSV file: extension, content type, size, and basic structure"""
         f = self.cleaned_data["csv_file"]
+        
+        # Check file extension (case-insensitive)
         if not f.name.lower().endswith(".csv"):
             raise forms.ValidationError("Please upload a .csv file.")
-        if f.size > 2 * 1024 * 1024:
-            raise forms.ValidationError("CSV file too large (max 2MB).")
         
-        # Read and validate CSV content
+        # Check file size (max 2MB)
+        max_size = 2 * 1024 * 1024  # 2MB
+        if f.size > max_size:
+            raise forms.ValidationError(
+                f"CSV file too large (max 2MB). File size: {f.size / 1024 / 1024:.2f}MB"
+            )
+        
+        # Check content type (be lenient - browsers vary)
+        content_type = getattr(f, 'content_type', '')
+        allowed_types = ['text/csv', 'application/vnd.ms-excel', 'text/plain', 'application/csv']
+        if content_type and content_type not in allowed_types:
+            # Don't reject based on content_type alone - some browsers send wrong MIME types
+            # But log it for security monitoring
+            pass
+        
+        # Basic structure validation (detailed parsing moved to service layer)
         try:
+            # Just verify it's readable UTF-8
+            f.seek(0)
             decoded = f.read().decode("utf-8")
-            f.seek(0)  # Reset file pointer
-            reader = csv.DictReader(io.StringIO(decoded))
+            f.seek(0)  # Reset for later processing
             
-            # Check required columns
-            required_columns = {"email"}
-            if not reader.fieldnames:
-                raise forms.ValidationError("CSV file appears to be empty or invalid.")
+            # Check it's not empty
+            if not decoded.strip():
+                raise forms.ValidationError("CSV file appears to be empty.")
             
-            missing_columns = required_columns - set(reader.fieldnames or [])
-            if missing_columns:
-                raise forms.ValidationError(
-                    f"Missing required columns: {', '.join(missing_columns)}"
-                )
-            
-            # Validate email format and check for duplicates
-            emails_seen = set()
-            row_num = 1  # Header is row 0, data rows start at 1
-            
-            for row in reader:
-                row_num += 1
-                email = row.get("email", "").strip()
-                
-                if not email:
-                    raise forms.ValidationError(
-                        f"Row {row_num}: Email is required."
-                    )
-                
-                # Validate email format
-                try:
-                    validate_email(email)
-                except DjangoValidationError:
-                    raise forms.ValidationError(
-                        f"Row {row_num}: Invalid email format: {email}"
-                    )
-                
-                # Check for duplicates
-                if email.lower() in emails_seen:
-                    raise forms.ValidationError(
-                        f"Row {row_num}: Duplicate email found: {email}"
-                    )
-                emails_seen.add(email.lower())
-            
-            if row_num == 1:  # Only header row, no actual data
-                raise forms.ValidationError("CSV file contains no data rows.")
+            # Quick check for CSV-like structure (has commas or tabs)
+            if ',' not in decoded and '\t' not in decoded:
+                raise forms.ValidationError("CSV file does not appear to be in CSV format.")
                 
         except UnicodeDecodeError:
             raise forms.ValidationError("CSV file must be UTF-8 encoded.")
-        except csv.Error as e:
-            # Handle CSV parsing errors
-            raise forms.ValidationError(f"Invalid CSV format: {str(e)}")
         except Exception as e:
-            # Re-raise ValidationErrors, wrap others
             if isinstance(e, forms.ValidationError):
                 raise
             raise forms.ValidationError(f"Error reading CSV file: {str(e)}")

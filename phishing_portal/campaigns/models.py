@@ -12,6 +12,11 @@ class EmailTemplate(models.Model):
         PAYROLL = "PAYROLL", "Payroll / Bank Details"
         DELIVERY = "DELIVERY", "Delivery Failure"
         HR_POLICY = "HR_POLICY", "HR Policy Update"
+        GENERAL = "GENERAL", "General internal email"
+
+    class TemplateType(models.TextChoices):
+        SCENARIO = "SCENARIO", "Pre-built Scenario"
+        CUSTOM = "CUSTOM", "Custom HTML Email"
 
     name = models.CharField(max_length=150, unique=True)
     subject = models.CharField(max_length=200)
@@ -19,11 +24,32 @@ class EmailTemplate(models.Model):
         help_text="Optional extra text. Placeholders like {{ first_name }} are allowed.",
         blank=True,
     )
+    template_type = models.CharField(
+        max_length=20,
+        choices=TemplateType.choices,
+        default=TemplateType.SCENARIO,
+        help_text="Choose between pre-built scenario or custom HTML email.",
+    )
     scenario = models.CharField(
         max_length=30,
         choices=Scenario.choices,
+        blank=True,
         default=Scenario.IT_ALERT,
-        help_text="Which built-in phishing scenario layout to use.",
+        help_text="Which built-in phishing scenario layout to use (only for scenario type). Use 'General internal email' for normal HR / IT / company announcements that are not meant to look like phishing.",
+    )
+    html_content = models.TextField(
+        blank=True,
+        help_text="Custom HTML email content. Use placeholders like {{ first_name }}, {{ click_url }}, {{ report_url }}. Only used when template_type is CUSTOM.",
+    )
+    sender_email = models.EmailField(
+        blank=True,
+        max_length=254,
+        help_text="Sender email address (e.g., 'security@company.com'). If empty, uses system default.",
+    )
+    sender_name = models.CharField(
+        blank=True,
+        max_length=200,
+        help_text="Sender display name (e.g., 'IT Security Team')",
     )
     learning_points = models.TextField(
         blank=True,
@@ -35,6 +61,7 @@ class EmailTemplate(models.Model):
         related_name="email_templates",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -63,7 +90,9 @@ class Campaign(models.Model):
         DRAFT = "DRAFT", "Draft"
         SCHEDULED = "SCHEDULED", "Scheduled"
         ACTIVE = "ACTIVE", "Active"
+        PAUSED = "PAUSED", "Paused"
         COMPLETED = "COMPLETED", "Completed"
+        CANCELLED = "CANCELLED", "Cancelled"
 
     name = models.CharField(max_length=150, unique=True)
     description = models.TextField(blank=True)
@@ -78,10 +107,16 @@ class Campaign(models.Model):
         related_name="campaigns",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     scheduled_for = models.DateTimeField(
         null=True,
         blank=True,
         help_text="Planned start date/time for this campaign."
+    )
+    sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When emails were actually sent."
     )
     status = models.CharField(
         max_length=20,
