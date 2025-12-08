@@ -1,10 +1,16 @@
+import csv
+import io
+
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.template import engines
 from django.urls import reverse
 from django.utils.html import strip_tags, escape
+from django.db import transaction
 
-from .models import Campaign, CampaignRecipient, CampaignEmail, EmailTemplate
+from .models import Campaign, CampaignRecipient, CampaignEmail, EmailTemplate, Recipient
 
 django_engine = engines["django"]
 
@@ -536,3 +542,151 @@ def send_campaign_emails(campaign: Campaign, request=None):
             body_text=body_text,
             body_html=html_body,
         )
+
+
+def import_recipients_from_csv(uploaded_file, campaign, user, log_action_func=None):
+    """
+    Import recipients from CSV file with robust validation and error handling.
+    
+    Args:
+        uploaded_file: Django UploadedFile object (already validated for extension/size)
+        campaign: Campaign instance to link recipients to
+        user: User instance for logging
+        log_action_func: Optional function to log actions (from campaigns.utils.log_action)
+    
+    Returns:
+        tuple: (created_count, linked_count, error_rows, error_details)
+        - created_count: Number of new Recipient objects created
+        - linked_count: Number of CampaignRecipient links created
+        - error_rows: List of row numbers that had errors
+        - error_details: Dict mapping row numbers to error messages
+    """
+    MAX_RECIPIENTS = 1000
+    
+    created_count = 0
+    linked_count = 0
+    error_rows = []
+    error_details = {}
+    
+    try:
+        # Read and decode file
+        decoded = uploaded_file.read().decode("utf-8")
+        uploaded_file.seek(0)  # Reset for potential re-reading
+        reader = csv.DictReader(io.StringIO(decoded))
+        
+        # Validate required columns
+        required_columns = {"email"}
+        if not reader.fieldnames:
+            raise ValueError("CSV file appears to be empty or invalid.")
+        
+        missing_columns = required_columns - set(reader.fieldnames or [])
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+        
+        # Track emails to detect duplicates within the file
+        emails_seen_in_file = set()
+        row_num = 1  # Start at 1 (header is row 0)
+        
+        # Process rows in a transaction for atomicity
+        with transaction.atomic():
+            for row in reader:
+                row_num += 1
+                row_errors = []
+                
+                # Extract and normalize fields
+                email = row.get("email", "").strip()
+                first_name = row.get("first_name", "").strip()
+                last_name = row.get("last_name", "").strip()
+                department = row.get("department", "").strip()
+                
+                # Validate email is present
+                if not email:
+                    row_errors.append("Email is required")
+                    error_rows.append(row_num)
+                    error_details[row_num] = "Email is required"
+                    continue
+                
+                # Validate email format
+                try:
+                    validate_email(email)
+                except DjangoValidationError:
+                    row_errors.append(f"Invalid email format: {email}")
+                    error_rows.append(row_num)
+                    error_details[row_num] = f"Invalid email format: {email}"
+                    continue
+                
+                # Check for duplicates within the file
+                email_lower = email.lower()
+                if email_lower in emails_seen_in_file:
+                    row_errors.append(f"Duplicate email in file: {email}")
+                    error_rows.append(row_num)
+                    error_details[row_num] = f"Duplicate email in file: {email}"
+                    continue
+                emails_seen_in_file.add(email_lower)
+                
+                # Check recipient limit before processing
+                if created_count + linked_count >= MAX_RECIPIENTS:
+                    if log_action_func:
+                        log_action_func(
+                            None,
+                            "Recipient limit exceeded - CSV upload",
+                            f"User: {user.username}, Campaign: {campaign.name} (ID: {campaign.id}), "
+                            f"Limit: {MAX_RECIPIENTS}, Processed: {created_count + linked_count}"
+                        )
+                    raise ValueError("Recipient limit exceeded: Maximum 1000 recipients allowed per upload.")
+                
+                # Create or get recipient
+                try:
+                    recipient, created = Recipient.objects.get_or_create(
+                        email=email_lower,  # Use lowercase for consistency
+                        defaults={
+                            "first_name": first_name[:100] if first_name else "",  # Enforce max_length
+                            "last_name": last_name[:100] if last_name else "",  # Enforce max_length
+                            "department": department[:100] if department else "",  # Enforce max_length
+                        },
+                    )
+                    
+                    if created:
+                        created_count += 1
+                    
+                    # Link to campaign (ignore if already linked)
+                    _, link_created = CampaignRecipient.objects.get_or_create(
+                        campaign=campaign,
+                        recipient=recipient,
+                    )
+                    
+                    if link_created:
+                        linked_count += 1
+                        
+                except Exception as e:
+                    # Database-level errors (e.g., constraint violations)
+                    error_rows.append(row_num)
+                    error_details[row_num] = f"Database error: {str(e)}"
+                    continue
+        
+        # Log suspicious activity if many errors
+        if len(error_rows) > 10 and log_action_func:
+            # log_action_func expects (request, action, details) signature
+            # Pass None for request - the logging function should handle it
+            log_action_func(
+                None,  # Request object not available in service layer
+                "Suspicious CSV import - many errors",
+                f"User: {user.username}, Campaign: {campaign.name} (ID: {campaign.id}), "
+                f"Errors: {len(error_rows)}/{row_num - 1} rows"
+            )
+        
+        # Check if file had any data rows
+        if row_num == 1:  # Only header row
+            raise ValueError("CSV file contains no data rows.")
+        
+    except UnicodeDecodeError:
+        raise ValueError("CSV file must be UTF-8 encoded.")
+    except csv.Error as e:
+        raise ValueError(f"Invalid CSV format: {str(e)}")
+    except Exception as e:
+        # Re-raise ValueError, wrap others
+        if isinstance(e, ValueError):
+            raise
+        raise ValueError(f"Error processing CSV file: {str(e)}")
+    
+    return created_count, linked_count, error_rows, error_details
