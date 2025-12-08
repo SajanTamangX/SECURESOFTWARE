@@ -205,7 +205,7 @@ def upload_recipients(request, pk):
                     csv_file,
                     campaign,
                     request.user,
-                    log_action_func=lambda req, action, details: log_action(request, action, details)
+                    log_action_func=lambda req, action, details: log_action(req, action, details)
                 )
                 
                 # Build success/error message
