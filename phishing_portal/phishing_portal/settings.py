@@ -72,12 +72,13 @@ WSGI_APPLICATION = "phishing_portal.wsgi.application"
 # Detect CI environment (GitHub Actions automatically sets GITHUB_ACTIONS=true)
 if os.getenv("GITHUB_ACTIONS") == "true":
     # CI-safe database configuration for GitHub Actions
+    # Uses same credentials as development environment for consistency
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME", "postgres"),
-            "USER": os.getenv("DB_USER", "postgres"),
-            "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
+            "NAME": os.getenv("DB_NAME", "phishing_db"),
+            "USER": os.getenv("DB_USER", "phishing_user"),
+            "PASSWORD": os.getenv("DB_PASSWORD", "phishing_pass"),
             "HOST": os.getenv("DB_HOST", "db"),  # Service container name "db"
             "PORT": os.getenv("DB_PORT", "5432"),
         }
