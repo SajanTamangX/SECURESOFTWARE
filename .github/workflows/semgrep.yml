@@ -102,7 +102,7 @@ jobs:
       # if-no-files-found: ignore ensures workflow doesn't fail if file doesn't exist
       - name: Upload Semgrep results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: semgrep-results
           path: semgrep-results.json
