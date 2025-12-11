@@ -1,21 +1,13 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
+# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
+# Copy project files
+COPY . /app
 
-# Install Python dependencies
-COPY requirements.txt .
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY . .
 
 # Create a non-root user and give it ownership of the app directory
 RUN useradd -m appuser && chown -R appuser:appuser /app
@@ -23,6 +15,7 @@ RUN useradd -m appuser && chown -R appuser:appuser /app
 # Switch to non-root user for runtime
 USER appuser
 
+# Set working directory to Django project root
 WORKDIR /app/phishing_portal
 
 # Run Django dev server
