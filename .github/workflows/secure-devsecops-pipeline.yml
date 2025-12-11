@@ -50,26 +50,28 @@ jobs:
     runs-on: ubuntu-latest
     
     services:
-      postgres:
-        image: postgres:16
+      db:
+        image: postgres:15
         env:
           POSTGRES_DB: postgres
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     
     env:
       DB_NAME: postgres
       DB_USER: postgres
       DB_PASSWORD: postgres
-      DB_HOST: postgres
+      DB_HOST: db
       DB_PORT: 5432
+      DJANGO_SECRET_KEY: test-secret-key-for-ci
+      DJANGO_DEBUG: 0
     
     steps:
       - name: Checkout code
@@ -87,17 +89,11 @@ jobs:
           pip install -r requirements.txt
       
       - name: Run database migrations
-        env:
-          DJANGO_SECRET_KEY: test-secret-key-for-ci
-          DJANGO_DEBUG: "0"
         run: |
           cd phishing_portal
           python manage.py migrate --noinput
       
       - name: Run Django tests
-        env:
-          DJANGO_SECRET_KEY: test-secret-key-for-ci
-          DJANGO_DEBUG: "0"
         run: |
           cd phishing_portal
           python manage.py test --noinput
@@ -204,26 +200,28 @@ jobs:
     needs: test
     
     services:
-      postgres:
-        image: postgres:16
+      db:
+        image: postgres:15
         env:
           POSTGRES_DB: postgres
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     
     env:
       DB_NAME: postgres
       DB_USER: postgres
       DB_PASSWORD: postgres
-      DB_HOST: postgres
+      DB_HOST: db
       DB_PORT: 5432
+      DJANGO_SECRET_KEY: test-secret-key-for-ci
+      DJANGO_DEBUG: 0
     
     steps:
       - name: Checkout code
@@ -241,17 +239,11 @@ jobs:
           pip install -r requirements.txt
       
       - name: Run database migrations
-        env:
-          DJANGO_SECRET_KEY: test-secret-key-for-ci
-          DJANGO_DEBUG: "0"
         run: |
           cd phishing_portal
           python manage.py migrate --noinput
       
       - name: Start Django development server
-        env:
-          DJANGO_SECRET_KEY: test-secret-key-for-ci
-          DJANGO_DEBUG: "0"
         run: |
           cd phishing_portal
           python manage.py runserver 0.0.0.0:8000 &
