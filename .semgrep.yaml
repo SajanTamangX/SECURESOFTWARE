@@ -1,0 +1,40 @@
+# Semgrep Configuration Documentation
+# ===================================
+# 
+# This file documents the Semgrep configuration used in this project.
+# 
+# IMPORTANT: Registry rules are specified via --config flags in commands,
+# NOT in this YAML file. This file is documentation only.
+#
+# Rulesets Used:
+# --------------
+#   - p/owasp-top-ten      (OWASP Top 10 security vulnerabilities)
+#   - p/security-audit     (Generic security audit rules)
+#   - p/python             (Python-specific security rules)
+#   - p/django             (Django-specific security rules)
+#
+# Path Exclusions:
+# ----------------
+# The following paths are excluded via --exclude flags in commands:
+#   - Test files: **/tests.py, **/test_*.py, **/*_test.py, **/test/**
+#   - Migrations: **/migrations/**
+#   - Virtual environments: **/venv/**, **/env/**, **/.venv/**
+#   - Build artifacts: **/__pycache__/**, **/build/**, **/dist/**
+#   - Documentation: **/*.md
+#   - Database files: **/*.sql, **/db.sqlite3
+#   - Environment files: **/.env*
+#   - IDE files: **/.vscode/**, **/.idea/**, **/.DS_Store
+#
+# Example Commands:
+# -----------------
+#   # Text output (for screenshots)
+#   semgrep --config=p/owasp-top-ten --config=p/security-audit \
+#           --config=p/python --config=p/django \
+#           --error --severity=ERROR --text \
+#           --exclude="**/tests.py" --exclude="**/migrations/**" \
+#           .
+#
+#   # Or use the Makefile targets:
+#   make semgrep-scan-text
+#
+# For more information, see SEMGREP_USAGE.md

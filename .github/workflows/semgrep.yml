@@ -1,0 +1,100 @@
+name: Semgrep SAST Scan
+
+# This workflow runs Semgrep Static Application Security Testing (SAST) on every push and pull request
+# It helps identify security vulnerabilities and code quality issues before they reach production
+
+on:
+  # Trigger on pull requests to any branch
+  pull_request:
+    branches: ['*']
+  
+  # Trigger on pushes to main and master branches
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  semgrep-scan:
+    name: Semgrep SAST Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout the repository code
+      # This step downloads the source code to the GitHub Actions runner
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Step 2: Set up Python environment
+      # This step configures Python 3.x for running Semgrep (which is a Python tool)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      # Step 3: Install Semgrep
+      # Semgrep is installed via pip, which is the official installation method
+      # This installs the latest version of Semgrep CLI tool
+      - name: Install Semgrep
+        run: |
+          pip install semgrep
+      
+      # Step 4: Run Semgrep scan
+      # This step executes Semgrep with official security rulesets
+      # The --config flags specify which rulesets to use (OWASP, Security Audit, Python, Django)
+      # The --error flag ensures the job fails if ERROR-level (HIGH/CRITICAL) findings are detected
+      # The --severity=ERROR flag filters to only show HIGH/CRITICAL security issues
+      # The --json flag outputs results in JSON format for better CI integration
+      # The --sarif flag outputs results in SARIF format for GitHub Security tab integration
+      - name: Run Semgrep scan
+        run: |
+          semgrep --config=p/owasp-top-ten \
+                  --config=p/security-audit \
+                  --config=p/python \
+                  --config=p/django \
+                  --error \
+                  --severity=ERROR \
+                  --json \
+                  --sarif \
+                  --output semgrep-results.json \
+                  --exclude="**/tests.py" \
+                  --exclude="**/test_*.py" \
+                  --exclude="**/*_test.py" \
+                  --exclude="**/test/**" \
+                  --exclude="**/migrations/**" \
+                  --exclude="**/venv/**" \
+                  --exclude="**/env/**" \
+                  --exclude="**/.venv/**" \
+                  --exclude="**/__pycache__/**" \
+                  --exclude="**/*.md" \
+                  --exclude="**/*.sql" \
+                  --exclude="**/db.sqlite3" \
+                  .
+        continue-on-error: false
+      
+      # Step 5: Check for HIGH/CRITICAL findings and fail if found
+      # This step parses the JSON output to explicitly check for ERROR severity findings
+      # ERROR severity in Semgrep corresponds to HIGH/CRITICAL security vulnerabilities
+      - name: Check for HIGH/CRITICAL findings
+        run: |
+          if [ -f semgrep-results.json ]; then
+            ERROR_COUNT=$(jq '[.results[] | select(.extra.severity == "ERROR")] | length' semgrep-results.json || echo "0")
+            if [ "$ERROR_COUNT" -gt 0 ]; then
+              echo "::error::Found $ERROR_COUNT HIGH/CRITICAL security issues. Pipeline will fail."
+              echo "Review the Semgrep scan output above for details."
+              exit 1
+            else
+              echo "✓ No HIGH/CRITICAL security issues found."
+            fi
+          fi
+      
+      # Step 6: Upload results as artifact (optional)
+      # This step saves the scan results as a GitHub Actions artifact
+      # Useful for downloading and reviewing detailed results later
+      - name: Upload Semgrep results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-results
+          path: semgrep-results.json
+          retention-days: 30
