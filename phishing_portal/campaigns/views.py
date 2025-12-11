@@ -381,22 +381,33 @@ def send_campaign(request, pk):
 
 # --- Inbox ---
 
+def _is_admin_user(user):
+    """Helper function to check if user is an admin (role ADMIN or is_superuser)"""
+    return user.role == "ADMIN" or user.is_superuser
+
+
 @login_required
 def inbox(request):
     """
-    Simple inbox showing emails for the logged-in user.
-    For VIEWER role, filter by their email address.
-    For ADMIN/INSTRUCTOR you may show all emails (or also filter – up to you).
+    Inbox showing emails with role-based filtering:
+    - ADMIN (or is_superuser): See all emails
+    - VIEWER/INSTRUCTOR: See only emails sent to their own email address
     """
     qs = CampaignEmail.objects.all().select_related("campaign", "recipient", "recipient__recipient")
 
     user = request.user
-    # Filter by user's email if they have one - TODO: handle case where user email doesn't match
-    if user.email:
-        qs = qs.filter(recipient__recipient__email=user.email)
+    
+    # Admin users can see all emails, others see only their own
+    if not _is_admin_user(user):
+        # Non-admin users: filter by their email address
+        if user.email:
+            qs = qs.filter(recipient__recipient__email=user.email)
+        else:
+            # User has no email, return empty queryset
+            qs = qs.none()
 
     context = {
-        "emails": qs,
+        "emails": qs.order_by("-sent_at"),  # Order by most recent first
         "user_role": user.role,
     }
     return render(request, "campaigns/inbox.html", context)
@@ -406,26 +417,37 @@ def inbox(request):
 def inbox_detail(request, pk: int):
     """
     Email detail view with enhanced access control:
-    - All users can only view emails sent to their own email address
+    - ADMIN (or is_superuser): Can view all emails
+    - VIEWER/INSTRUCTOR: Can only view emails sent to their own email address
     - Logs access attempts for security auditing
     """
-    email_obj = get_object_or_404(
-        CampaignEmail.objects.select_related("campaign", "recipient", "recipient__recipient"),
-        pk=pk,
-    )
-
     user = request.user
+    
+    # Build queryset - admins can access all, others filtered
+    qs = CampaignEmail.objects.select_related("campaign", "recipient", "recipient__recipient")
+    
+    if not _is_admin_user(user):
+        # Non-admin users: filter by their email address
+        if user.email:
+            qs = qs.filter(recipient__recipient__email=user.email)
+        else:
+            # User has no email, return empty queryset
+            qs = qs.none()
+    
+    email_obj = get_object_or_404(qs, pk=pk)
+    
     recipient_email = email_obj.recipient.recipient.email
     
-    # Access control: Users can only see emails sent to their own email address
-    if not user.email or recipient_email != user.email:
-        log_action(
-            request,
-            "Permission denied - unauthorized email access",
-            f"User: {user.username}, User email: {user.email or 'none'}, "
-            f"Attempted email ID: {pk}, Recipient email: {recipient_email}"
-        )
-        raise Http404("Email not found")  # Return 404 instead of 403 to prevent IDOR enumeration
+    # Additional access control check for non-admin users (double-check)
+    if not _is_admin_user(user):
+        if not user.email or recipient_email != user.email:
+            log_action(
+                request,
+                "Permission denied - unauthorized email access",
+                f"User: {user.username}, User email: {user.email or 'none'}, "
+                f"Attempted email ID: {pk}, Recipient email: {recipient_email}"
+            )
+            raise Http404("Email not found")  # Return 404 instead of 403 to prevent IDOR enumeration
     
     # Log successful access
     log_action(
@@ -446,25 +468,36 @@ def inbox_detail(request, pk: int):
 def toggle_email_read(request, pk: int):
     """
     Toggle email read status with access control:
-    - Users can only toggle emails sent to their own email address
+    - ADMIN (or is_superuser): Can toggle any email
+    - VIEWER/INSTRUCTOR: Can only toggle emails sent to their own email address
     """
-    email_obj = get_object_or_404(
-        CampaignEmail.objects.select_related("recipient", "recipient__recipient"),
-        pk=pk
-    )
-
     user = request.user
+    
+    # Build queryset - admins can access all, others filtered
+    qs = CampaignEmail.objects.select_related("recipient", "recipient__recipient")
+    
+    if not _is_admin_user(user):
+        # Non-admin users: filter by their email address
+        if user.email:
+            qs = qs.filter(recipient__recipient__email=user.email)
+        else:
+            # User has no email, return empty queryset
+            qs = qs.none()
+    
+    email_obj = get_object_or_404(qs, pk=pk)
+    
     recipient_email = email_obj.recipient.recipient.email
     
-    # Access control: Users can only modify emails sent to their own email address
-    if not user.email or recipient_email != user.email:
-        log_action(
-            request,
-            "Permission denied - unauthorized email modification",
-            f"User: {user.username}, User email: {user.email or 'none'}, "
-            f"Attempted email ID: {pk}, Recipient email: {recipient_email}"
-        )
-        raise Http404("Email not found")
+    # Additional access control check for non-admin users (double-check)
+    if not _is_admin_user(user):
+        if not user.email or recipient_email != user.email:
+            log_action(
+                request,
+                "Permission denied - unauthorized email modification",
+                f"User: {user.username}, User email: {user.email or 'none'}, "
+                f"Attempted email ID: {pk}, Recipient email: {recipient_email}"
+            )
+            raise Http404("Email not found")
     
     email_obj.is_read = not email_obj.is_read
     email_obj.save(update_fields=["is_read"])
