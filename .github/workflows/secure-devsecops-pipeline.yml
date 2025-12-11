@@ -46,7 +46,7 @@ jobs:
   # Runs Django test suite to ensure code functionality
   # Other security jobs depend on this to ensure we're testing working code
   test:
-    name: Unit Tests
+    name: Unit tests
     runs-on: ubuntu-latest
     
     services:
@@ -65,6 +65,7 @@ jobs:
           --health-retries=5
     
     env:
+      GITHUB_ACTIONS: "true"
       DB_NAME: phishing_db
       DB_USER: phishing_user
       DB_PASSWORD: phishing_pass
@@ -77,26 +78,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
       
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Run database migrations
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          until pg_isready -h db -p 5432 -U phishing_user -d phishing_db; do
+            echo "Postgres is unavailable - sleeping"
+            sleep 2
+          done
+          echo "Postgres is up!"
+      
+      - name: Run migrations
         run: |
           cd phishing_portal
           python manage.py migrate --noinput
       
-      - name: Run Django tests
+      - name: Run tests
         run: |
           cd phishing_portal
-          python manage.py test --noinput
+          python manage.py test
 
   # Job 2: SAST - Static Application Security Testing with Semgrep
   # Scans source code for security vulnerabilities using Semgrep rulesets
