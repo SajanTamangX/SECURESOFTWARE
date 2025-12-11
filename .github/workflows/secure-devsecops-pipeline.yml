@@ -51,23 +51,23 @@ jobs:
     
     services:
       db:
-        image: postgres:15
+        image: postgres:16
         env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: phishing_db
+          POSTGRES_USER: phishing_user
+          POSTGRES_PASSWORD: phishing_pass
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="pg_isready -U phishing_user -d phishing_db"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
     
     env:
-      DB_NAME: postgres
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_NAME: phishing_db
+      DB_USER: phishing_user
+      DB_PASSWORD: phishing_pass
       DB_HOST: db
       DB_PORT: 5432
       DJANGO_SECRET_KEY: test-secret-key-for-ci
@@ -201,23 +201,23 @@ jobs:
     
     services:
       db:
-        image: postgres:15
+        image: postgres:16
         env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: phishing_db
+          POSTGRES_USER: phishing_user
+          POSTGRES_PASSWORD: phishing_pass
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="pg_isready -U phishing_user -d phishing_db"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
     
     env:
-      DB_NAME: postgres
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_NAME: phishing_db
+      DB_USER: phishing_user
+      DB_PASSWORD: phishing_pass
       DB_HOST: db
       DB_PORT: 5432
       DJANGO_SECRET_KEY: test-secret-key-for-ci
