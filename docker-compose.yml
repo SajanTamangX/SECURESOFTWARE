@@ -27,6 +27,22 @@ services:
       - db
       - mailhog
 
+  # OWASP ZAP service for DAST (Dynamic Application Security Testing)
+  # This service is optional and used for security scanning
+  # Usage:
+  #   1. Start the web service: docker-compose up web
+  #   2. Run ZAP scan: docker-compose run --rm zap zap-baseline.py -t http://web:8000 -r report.html -J report.json -I -j
+  #   3. Or use the convenience script: ./security/run_zap_baseline.sh http://web:8000
+  # Note: ZAP reports will be saved to security/reports/ directory
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    volumes:
+      - ./security/reports:/zap/wrk/:rw
+    network_mode: service:web
+    # This service doesn't run by default - use 'docker-compose run' to execute scans
+    profiles:
+      - security
+
 volumes:
   postgres_data:
 

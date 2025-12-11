@@ -47,3 +47,13 @@ db.sqlite3-journal
 .DS_Store
 Thumbs.db
 
+# Security Testing Reports
+# Exclude ZAP reports by default (they can be large and frequently generated)
+# But allow sample reports to be committed for evidence
+security/reports/*.html
+security/reports/*.json
+security/reports/*.xml
+# Allow sample reports (uncomment and rename a report to include it)
+# !security/reports/sample_zap_report.html
+# !security/reports/sample_zap_report.json
+

@@ -1,0 +1,3 @@
+# This file ensures the reports directory is tracked by git
+# Actual report files (*.html, *.json) are excluded via .gitignore
+# To include a sample report for evidence, rename it and uncomment in .gitignore
