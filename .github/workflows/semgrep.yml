@@ -42,17 +42,16 @@ jobs:
       # Step 4: Run Semgrep scan
       # This step executes Semgrep with official security rulesets
       # The --config flags specify which rulesets to use (OWASP, Security Audit, Python, Django)
-      # The --error flag ensures the job fails if ERROR-level (HIGH/CRITICAL) findings are detected
       # The --severity=ERROR flag filters to only show HIGH/CRITICAL security issues
       # The --json flag outputs results in JSON format for better CI integration
       # The --sarif flag outputs results in SARIF format for GitHub Security tab integration
+      # continue-on-error: true ensures JSON file is created even if Semgrep finds issues
       - name: Run Semgrep scan
         run: |
           semgrep --config=p/owasp-top-ten \
                   --config=p/security-audit \
                   --config=p/python \
                   --config=p/django \
-                  --error \
                   --severity=ERROR \
                   --json \
                   --sarif \
@@ -70,31 +69,37 @@ jobs:
                   --exclude="**/*.sql" \
                   --exclude="**/db.sqlite3" \
                   .
-        continue-on-error: false
+        continue-on-error: true
       
       # Step 5: Check for HIGH/CRITICAL findings and fail if found
       # This step parses the JSON output to explicitly check for ERROR severity findings
       # ERROR severity in Semgrep corresponds to HIGH/CRITICAL security vulnerabilities
       - name: Check for HIGH/CRITICAL findings
         run: |
-          if [ -f semgrep-results.json ]; then
-            ERROR_COUNT=$(jq '[.results[] | select(.extra.severity == "ERROR")] | length' semgrep-results.json || echo "0")
-            if [ "$ERROR_COUNT" -gt 0 ]; then
-              echo "::error::Found $ERROR_COUNT HIGH/CRITICAL security issues. Pipeline will fail."
-              echo "Review the Semgrep scan output above for details."
-              exit 1
-            else
-              echo "✓ No HIGH/CRITICAL security issues found."
-            fi
+          if [ ! -f semgrep-results.json ]; then
+            echo "::error::Semgrep results file not found. Scan may have failed."
+            exit 1
+          fi
+          
+          ERROR_COUNT=$(jq '[.results[] | select(.extra.severity == "ERROR")] | length' semgrep-results.json 2>/dev/null || echo "0")
+          
+          if [ "$ERROR_COUNT" -gt 0 ]; then
+            echo "::error::Found $ERROR_COUNT HIGH/CRITICAL security issues. Pipeline will fail."
+            echo "Review the Semgrep scan output above for details."
+            exit 1
+          else
+            echo "✓ No HIGH/CRITICAL security issues found."
           fi
       
-      # Step 6: Upload results as artifact (optional)
+      # Step 6: Upload results as artifact
       # This step saves the scan results as a GitHub Actions artifact
       # Useful for downloading and reviewing detailed results later
+      # if-no-files-found: ignore ensures workflow doesn't fail if file doesn't exist
       - name: Upload Semgrep results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: semgrep-results
           path: semgrep-results.json
           retention-days: 30
+          if-no-files-found: ignore
