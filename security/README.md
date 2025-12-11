@@ -9,8 +9,20 @@ This directory contains security testing tools and scripts for the Phishing Simu
 
 ## Quick Start
 
-1. Ensure Django application is running at `http://localhost:8000`
-2. Run the scan script: `./security/run_zap_baseline.sh`
+1. Ensure Django application is running
+2. Run the scan script with appropriate target URL:
+   ```bash
+   # Local development (Django on host)
+   bash security/run_zap_baseline.sh http://localhost:8000
+   
+   # macOS Docker (access host from container)
+   bash security/run_zap_baseline.sh http://host.docker.internal:8000
+   
+   # Docker Compose (access web service)
+   bash security/run_zap_baseline.sh http://web:8000
+   ```
 3. Review reports in `security/reports/`
+
+**Note for macOS Docker users**: Use `http://host.docker.internal:8000` to access your host machine's Django server from within the Docker container.
 
 For detailed documentation, see `docs/dast_owasp_zap.md`.

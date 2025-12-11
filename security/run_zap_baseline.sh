@@ -8,15 +8,23 @@
 #
 # Prerequisites:
 #   1. Docker must be installed and running
-#   2. The Django application must be running and accessible at http://localhost:8000
-#      (or http://web:8000 if running via docker-compose)
+#   2. The Django application must be running and accessible
 #   3. Sufficient disk space for scan reports (typically 10-50MB per scan)
 #
 # Usage:
 #   ./security/run_zap_baseline.sh [target_url]
 #
 #   Default target URL: http://localhost:8000
-#   Example: ./security/run_zap_baseline.sh http://web:8000
+#   
+#   Examples:
+#     # Local development (Django running on host)
+#     ./security/run_zap_baseline.sh http://localhost:8000
+#     
+#     # macOS Docker (access host from container)
+#     ./security/run_zap_baseline.sh http://host.docker.internal:8000
+#     
+#     # Docker Compose (access web service)
+#     ./security/run_zap_baseline.sh http://web:8000
 #
 # Output:
 #   Reports are saved to security/reports/ with timestamped filenames:
@@ -64,9 +72,14 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # Check if target URL is accessible (optional check)
+# Note: host.docker.internal may not resolve from host, but will work from Docker container
 echo -e "${YELLOW}Checking if target URL is accessible...${NC}"
 if command -v curl &> /dev/null; then
-    if curl -s --head --fail "${TARGET_URL}" > /dev/null 2>&1; then
+    # Skip check for host.docker.internal as it may not resolve from host
+    if [[ "${TARGET_URL}" == *"host.docker.internal"* ]]; then
+        echo -e "${YELLOW}Note: Using host.docker.internal (macOS Docker networking)${NC}"
+        echo "  URL accessibility check skipped - will be tested from within Docker container"
+    elif curl -s --head --fail "${TARGET_URL}" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Target URL is accessible${NC}"
     else
         echo -e "${RED}✗ Warning: Target URL may not be accessible${NC}"

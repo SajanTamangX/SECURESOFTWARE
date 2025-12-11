@@ -1,0 +1,284 @@
+name: DevSecOps Security Pipeline
+
+# DevSecOps CI/CD Pipeline for Phishing Simulation & Awareness Portal
+#
+# This workflow implements a comprehensive security testing pipeline that runs on:
+# - Every push to main/master branches
+# - Every pull request
+#
+# Pipeline Stages:
+#   1. Unit Tests - Runs Django test suite (required gate)
+#   2. SAST (Semgrep) - Static code analysis for security vulnerabilities (required gate)
+#   3. Dependency Scanning (pip-audit) - Checks for vulnerable Python packages (required gate)
+#   4. Secret Scanning (Gitleaks) - Detects hardcoded secrets in code (required gate)
+#   5. DAST (OWASP ZAP) - Dynamic application security testing (reporting only, non-blocking)
+#
+# Security Gates:
+#   The following jobs act as "hard gates" that will fail the pipeline:
+#   - test: Unit tests must pass
+#   - sast_semgrep: No HIGH/CRITICAL security issues allowed
+#   - dep_scan: No known vulnerabilities in dependencies
+#   - secrets_scan: No hardcoded secrets allowed
+#
+#   The dast_zap_baseline job generates reports but does not block merges.
+#   In a future iteration, we could parse ZAP JSON reports and fail on Medium/High findings.
+#
+# Branch Protection:
+#   To enable branch protection in GitHub:
+#   1. Go to Settings > Branches > Add rule
+#   2. Select your branch (main/master)
+#   3. Enable "Require status checks to pass before merging"
+#   4. Select: test, sast_semgrep, dep_scan, secrets_scan
+#   5. Save changes
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  # Job 1: Unit Tests
+  # Runs Django test suite to ensure code functionality
+  # Other security jobs depend on this to ensure we're testing working code
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: phishing_db
+          POSTGRES_USER: phishing_user
+          POSTGRES_PASSWORD: phishing_pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://phishing_user:phishing_pass@localhost:5432/phishing_db
+          DJANGO_SECRET_KEY: test-secret-key-for-ci
+          DJANGO_DEBUG: "0"
+        run: |
+          cd phishing_portal
+          python manage.py migrate --noinput
+      
+      - name: Run Django tests
+        env:
+          DATABASE_URL: postgresql://phishing_user:phishing_pass@localhost:5432/phishing_db
+          DJANGO_SECRET_KEY: test-secret-key-for-ci
+          DJANGO_DEBUG: "0"
+        run: |
+          cd phishing_portal
+          python manage.py test --noinput
+
+  # Job 2: SAST - Static Application Security Testing with Semgrep
+  # Scans source code for security vulnerabilities using Semgrep rulesets
+  # Fails pipeline if HIGH/CRITICAL issues are found
+  sast_semgrep:
+    name: SAST - Semgrep
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Semgrep
+        run: pip install semgrep
+      
+      - name: Run Semgrep scan
+        run: |
+          semgrep scan \
+            --config=p/owasp-top-ten \
+            --config=p/security-audit \
+            --config=p/python \
+            --config=p/django \
+            --severity=ERROR \
+            --error \
+            --exclude="**/tests.py" \
+            --exclude="**/test_*.py" \
+            --exclude="**/*_test.py" \
+            --exclude="**/test/**" \
+            --exclude="**/migrations/**" \
+            --exclude="**/venv/**" \
+            --exclude="**/env/**" \
+            --exclude="**/.venv/**" \
+            --exclude="**/__pycache__/**" \
+            --exclude="**/*.md" \
+            --exclude="**/*.sql" \
+            --exclude="**/db.sqlite3" \
+            .
+
+  # Job 3: Dependency Scanning with pip-audit
+  # Scans Python dependencies for known vulnerabilities
+  # Fails pipeline if vulnerabilities are found
+  dep_scan:
+    name: Dependency Scanning - pip-audit
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install pip-audit
+        run: pip install pip-audit
+      
+      - name: Run pip-audit scan
+        run: |
+          pip-audit -r requirements.txt --desc
+        continue-on-error: false
+
+  # Job 4: Secret Scanning with Gitleaks
+  # Scans repository for hardcoded secrets, API keys, passwords, etc.
+  # Fails pipeline if secrets are detected
+  secrets_scan:
+    name: Secret Scanning - Gitleaks
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+      
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Uses default Gitleaks configuration if .gitleaks.toml doesn't exist
+          no-git: false
+          verbose: true
+
+  # Job 5: DAST - Dynamic Application Security Testing with OWASP ZAP
+  # Runs OWASP ZAP baseline scan against running Django application
+  # Generates HTML and JSON reports for analysis
+  # This job does NOT fail the pipeline (reporting only)
+  # Future enhancement: Parse JSON and fail on Medium/High findings
+  dast_zap_baseline:
+    name: DAST - OWASP ZAP Baseline
+    runs-on: ubuntu-latest
+    needs: test
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: phishing_db
+          POSTGRES_USER: phishing_user
+          POSTGRES_PASSWORD: phishing_pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://phishing_user:phishing_pass@localhost:5432/phishing_db
+          DJANGO_SECRET_KEY: test-secret-key-for-ci
+          DJANGO_DEBUG: "0"
+        run: |
+          cd phishing_portal
+          python manage.py migrate --noinput
+      
+      - name: Start Django development server
+        env:
+          DATABASE_URL: postgresql://phishing_user:phishing_pass@localhost:5432/phishing_db
+          DJANGO_SECRET_KEY: test-secret-key-for-ci
+          DJANGO_DEBUG: "0"
+        run: |
+          cd phishing_portal
+          python manage.py runserver 0.0.0.0:8000 &
+          sleep 10  # Wait for server to start
+        continue-on-error: false
+      
+      - name: Wait for Django server to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:8000 > /dev/null 2>&1; do sleep 2; done' || exit 1
+      
+      - name: Make ZAP script executable
+        run: chmod +x security/run_zap_baseline.sh
+      
+      - name: Install Docker for ZAP
+        run: |
+          # Docker is pre-installed on GitHub Actions runners
+          docker --version
+      
+      - name: Run OWASP ZAP baseline scan
+        run: |
+          bash security/run_zap_baseline.sh http://localhost:8000
+        continue-on-error: true  # Don't fail pipeline on ZAP findings
+      
+      - name: Upload ZAP HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: security/reports/*.html
+          retention-days: 30
+          if-no-files-found: ignore
+      
+      - name: Upload ZAP JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: security/reports/*.json
+          retention-days: 30
+          if-no-files-found: ignore
