@@ -53,9 +53,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: phishing_db
-          POSTGRES_USER: phishing_user
-          POSTGRES_PASSWORD: phishing_pass
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -63,6 +63,13 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+    
+    env:
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
     
     steps:
       - name: Checkout code
@@ -81,7 +88,6 @@ jobs:
       
       - name: Run database migrations
         env:
-          DATABASE_URL: postgresql://phishing_user:phishing_pass@localhost:5432/phishing_db
           DJANGO_SECRET_KEY: test-secret-key-for-ci
           DJANGO_DEBUG: "0"
         run: |
@@ -90,7 +96,6 @@ jobs:
       
       - name: Run Django tests
         env:
-          DATABASE_URL: postgresql://phishing_user:phishing_pass@localhost:5432/phishing_db
           DJANGO_SECRET_KEY: test-secret-key-for-ci
           DJANGO_DEBUG: "0"
         run: |
@@ -202,9 +207,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: phishing_db
-          POSTGRES_USER: phishing_user
-          POSTGRES_PASSWORD: phishing_pass
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -212,6 +217,13 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+    
+    env:
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
     
     steps:
       - name: Checkout code
@@ -230,7 +242,6 @@ jobs:
       
       - name: Run database migrations
         env:
-          DATABASE_URL: postgresql://phishing_user:phishing_pass@localhost:5432/phishing_db
           DJANGO_SECRET_KEY: test-secret-key-for-ci
           DJANGO_DEBUG: "0"
         run: |
@@ -239,7 +250,6 @@ jobs:
       
       - name: Start Django development server
         env:
-          DATABASE_URL: postgresql://phishing_user:phishing_pass@localhost:5432/phishing_db
           DJANGO_SECRET_KEY: test-secret-key-for-ci
           DJANGO_DEBUG: "0"
         run: |
