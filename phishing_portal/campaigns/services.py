@@ -1,3 +1,18 @@
+"""
+Service layer functions for Campaigns app.
+
+This module contains business logic for:
+- Email template rendering (scenario-based HTML email generation)
+- Campaign email sending (sending emails to recipients)
+- CSV recipient import (parsing and validating CSV files)
+
+These functions are separated from views to:
+- Improve code organization
+- Enable reuse across different views
+- Facilitate testing
+- Follow separation of concerns principle
+"""
+
 import csv
 import io
 
@@ -12,6 +27,7 @@ from django.db import transaction
 
 from .models import Campaign, CampaignRecipient, CampaignEmail, EmailTemplate, Recipient
 
+# Django template engine for rendering template strings
 django_engine = engines["django"]
 
 
@@ -462,9 +478,20 @@ SCENARIO_BUILDERS = {
 def send_campaign_emails(campaign: Campaign, request=None):
     """
     Send emails for a campaign to all linked recipients.
-    Uses MailHog / configured SMTP backend in development.
     
-    Note: In production, you'd want to use a task queue (Celery) for this.
+    This function:
+    1. Iterates through all CampaignRecipient links for the campaign
+    2. Renders email body using scenario-specific template builders
+    3. Adds tracking URLs (open, click, report)
+    4. Sends email via Django's email backend (MailHog in dev, SMTP in prod)
+    5. Creates CampaignEmail records for inbox feature
+    
+    Args:
+        campaign: Campaign instance to send emails for
+        request: Optional HttpRequest object (used to build absolute URLs)
+    
+    Note: In production, you'd want to use a task queue (Celery) for this
+    to avoid blocking the web request and handle large campaigns.
     """
     cr_qs = CampaignRecipient.objects.select_related("recipient").filter(campaign=campaign)
     
@@ -548,6 +575,23 @@ def import_recipients_from_csv(uploaded_file, campaign, user, log_action_func=No
     """
     Import recipients from CSV file with robust validation and error handling.
     
+    This function:
+    1. Validates CSV structure and encoding (UTF-8)
+    2. Validates required columns (email)
+    3. Validates email format for each row
+    4. Checks for duplicates within the file
+    5. Creates Recipient objects (or gets existing ones)
+    6. Links recipients to campaign via CampaignRecipient
+    7. Returns detailed results including errors
+    
+    Security features:
+    - Input validation and sanitization
+    - Email format validation
+    - Duplicate detection
+    - Row limit enforcement (1000 max)
+    - Transaction rollback on critical errors
+    - Detailed error reporting
+    
     Args:
         uploaded_file: Django UploadedFile object (already validated for extension/size)
         campaign: Campaign instance to link recipients to
@@ -560,6 +604,9 @@ def import_recipients_from_csv(uploaded_file, campaign, user, log_action_func=No
         - linked_count: Number of CampaignRecipient links created
         - error_rows: List of row numbers that had errors
         - error_details: Dict mapping row numbers to error messages
+    
+    Raises:
+        ValueError: If CSV structure is invalid, encoding is wrong, or limit exceeded
     """
     MAX_RECIPIENTS = 1000
     

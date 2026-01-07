@@ -1,28 +1,54 @@
+# Docker Compose configuration for Development Environment
+# This file defines all services needed to run the phishing portal in development mode
+
 services:
+  # PostgreSQL Database Service
+  # Provides the database backend for the Django application
   db:
+    # Use official PostgreSQL 16 image
     image: postgres:16
+    # Environment variables to configure PostgreSQL
     environment:
-      POSTGRES_DB: phishing_db
-      POSTGRES_USER: phishing_user
-      POSTGRES_PASSWORD: phishing_pass
+      POSTGRES_DB: phishing_db          # Database name
+      POSTGRES_USER: phishing_user      # Database username
+      POSTGRES_PASSWORD: phishing_pass  # Database password (change in production!)
+    # Persistent volume to store database data
+    # This ensures data persists even if the container is removed
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # MailHog Email Testing Service
+  # Captures emails sent by the application for testing purposes
+  # Access the web UI at http://localhost:8025
   mailhog:
+    # Official MailHog image for email testing
     image: mailhog/mailhog
+    # Expose MailHog web UI port to host machine
     ports:
-      - "8025:8025"
+      - "8025:8025"  # Web UI port for viewing captured emails
 
+  # Django Web Application Service
+  # The main application server running Django
   web:
+    # Build the Docker image using Dockerfile in current directory
     build: .
+    # Override default command to run Django development server
+    # Navigate to phishing_portal directory and start the server
     command: sh -c "cd phishing_portal && python manage.py runserver 0.0.0.0:8000"
+    # Mount current directory to /app in container for live code reloading
+    # Changes to source code will be reflected immediately (development feature)
     volumes:
       - .:/app
+    # Set working directory inside container
     working_dir: /app
+    # Expose Django development server port to host machine
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Access application at http://localhost:8000
+    # Load environment variables from .env.dev file
     env_file:
       - .env.dev
+    # Ensure database and mailhog start before web service
+    # This prevents connection errors during startup
     depends_on:
       - db
       - mailhog

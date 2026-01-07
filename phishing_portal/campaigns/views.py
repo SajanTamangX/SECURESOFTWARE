@@ -1,3 +1,23 @@
+"""
+View functions for the Campaigns app.
+
+This module contains all view functions for:
+- Email template management (list, create)
+- Campaign management (list, create, detail)
+- Recipient management (CSV upload)
+- Email tracking (open, click, report)
+- Landing pages (educational content after clicking)
+- Inbox (viewing received emails)
+- Blog features (educational content)
+- Viewer features (sticky notes, training videos)
+
+All views include:
+- Role-based access control
+- Input validation and sanitization
+- Security logging
+- Object-level permission checks
+"""
+
 import hashlib
 
 from django.contrib import messages
@@ -266,7 +286,18 @@ def upload_recipients(request, pk):
 # --- Tracking & Landing Page ---
 
 def _hash_ip(ip: str) -> str:
-    """Hash IP address for privacy - we don't store raw IPs"""
+    """
+    Hash IP address for privacy compliance.
+    
+    Security: We don't store raw IP addresses to protect user privacy.
+    Uses SHA-256 one-way hash (cannot be reversed).
+    
+    Args:
+        ip: IP address string
+    
+    Returns:
+        str: SHA-256 hash of IP address, or empty string if no IP provided
+    """
     if not ip:
         return ""
     # Using SHA-256 - one-way hash so we can't reverse it
@@ -274,27 +305,50 @@ def _hash_ip(ip: str) -> str:
 
 
 def _log_event(tracking_id, event_type, request):
+    """
+    Internal helper function to log email tracking events.
+    
+    Creates an Event record when a recipient interacts with a phishing email:
+    - Opens email (via tracking pixel)
+    - Clicks link in email
+    - Reports email as phishing
+    
+    Args:
+        tracking_id: UUID tracking ID from email link
+        event_type: Event.Type enum (OPEN, CLICK, or REPORT)
+        request: Django HttpRequest object
+    
+    Returns:
+        CampaignRecipient: The campaign-recipient link object
+    
+    Raises:
+        Http404: If tracking_id is invalid or recipient is inactive
+    """
     try:
+        # Get campaign-recipient link by tracking ID
         cr = CampaignRecipient.objects.select_related("campaign").get(
             tracking_id=tracking_id, is_active=True
         )
     except CampaignRecipient.DoesNotExist:
         raise Http404("Unknown tracking id")
     
-    user_agent = request.META.get("HTTP_USER_AGENT", "")[:255]
+    # Extract user agent and IP from request
+    user_agent = request.META.get("HTTP_USER_AGENT", "")[:255]  # Truncate to max length
     ip = request.META.get("REMOTE_ADDR", "")
     
+    # Create event record with hashed IP for privacy
     Event.objects.create(
         campaign_recipient=cr,
         event_type=event_type,
         user_agent=user_agent,
-        ip_hash=_hash_ip(ip),
+        ip_hash=_hash_ip(ip),  # Store hashed IP, not raw IP
     )
     return cr
 
 
 # 1x1 transparent PNG for email tracking pixel
 # Email clients need to load this image to track opens
+# This is embedded as an <img> tag in emails to detect when emails are opened
 PIXEL_DATA = (
     b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
     b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
@@ -305,8 +359,23 @@ PIXEL_DATA = (
 
 @csrf_exempt  # tracking pixel is GET-only and has no form data
 def track_open(request, tracking_id):
+    """
+    Track email open event via 1x1 transparent PNG pixel.
+    
+    This view is called when an email client loads the tracking pixel image.
+    Returns a 1x1 transparent PNG image and logs the open event.
+    
+    Security: CSRF exempt because this is a GET request with no form data.
+    
+    Args:
+        request: Django HttpRequest object
+        tracking_id: UUID tracking ID from email pixel URL
+    
+    Returns:
+        HttpResponse: 1x1 transparent PNG image
+    """
     _log_event(tracking_id, Event.Type.OPEN, request)
-    # Return a tiny PNG pixel
+    # Return a tiny PNG pixel (1x1 transparent image)
     return HttpResponse(PIXEL_DATA, content_type="image/png")
 
 

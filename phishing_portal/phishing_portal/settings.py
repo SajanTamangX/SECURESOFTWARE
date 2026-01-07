@@ -1,11 +1,20 @@
 """
 Django settings for phishing_portal project.
+
+This module contains all Django configuration settings including:
+- Security settings (CSRF, XSS protection, secure cookies)
+- Database configuration (PostgreSQL)
+- Email configuration (MailHog for development)
+- Static files configuration
+- Logging configuration
+- Custom middleware configuration
 """
 
 import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+# BASE_DIR points to the phishing_portal directory (parent of this file)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -13,11 +22,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# Secret key is loaded from environment variable for security
+# Falls back to insecure default in development (change in production!)
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG mode shows detailed error pages - disable in production!
+# Set DJANGO_DEBUG=0 in production environment
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 
+# Allowed hosts for security (prevents HTTP Host header attacks)
+# "*" allows all hosts (OK for development, restrict in production!)
 ALLOWED_HOSTS = ["*"]
 
 

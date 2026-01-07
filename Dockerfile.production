@@ -1,35 +1,68 @@
+# Production Dockerfile for Django Phishing Portal
+# Optimized for production deployment with security and performance considerations
+# Uses Python 3.12 and Gunicorn WSGI server
+
+# Base image: Python 3.12 slim (latest stable Python version)
 FROM python:3.12-slim
 
+# Python environment variables for production optimization
+# PYTHONDONTWRITEBYTECODE=1: Prevent Python from writing .pyc files (reduces image size)
 ENV PYTHONDONTWRITEBYTECODE=1
+# PYTHONUNBUFFERED=1: Ensure Python output is sent straight to terminal (better logging)
 ENV PYTHONUNBUFFERED=1
 
+# Set working directory inside the container
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies required for building Python packages
+# build-essential: Contains gcc, make, and other build tools needed for compiling packages
+# libpq-dev: PostgreSQL development libraries (required for psycopg2)
+# && rm -rf /var/lib/apt/lists/*: Clean up apt cache to reduce image size
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
+# Copy requirements.txt first (Docker layer caching optimization)
+# If requirements.txt doesn't change, this layer can be reused
 COPY requirements.txt .
+# Install dependencies and Gunicorn WSGI server
+# --no-cache-dir: Don't store pip cache to reduce image size
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
-# Copy application code
+# Copy application code to container
+# This includes all source code, templates, static files, etc.
 COPY . .
 
+# Set working directory to Django project root
+# This is where manage.py is located
 WORKDIR /app/phishing_portal
 
-# Collect static files
+# Collect static files for production serving
+# Django collects all static files from apps into a single directory
+# --noinput: Run in non-interactive mode (no prompts)
+# || true: Don't fail if static files directory doesn't exist yet
 RUN python manage.py collectstatic --noinput || true
 
-# Create non-root user
+# Create non-root user for security
+# Running as root in production is a security risk
+# -m: Create home directory
+# -u 1000: Set user ID to 1000 (consistent across containers)
+# chown: Give ownership of /app directory to appuser
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# Switch to non-root user
 USER appuser
 
-# Expose port
+# Expose port 8000 for the web server
+# This documents which port the container listens on
 EXPOSE 8000
 
-# Run gunicorn
+# Run Gunicorn WSGI server (production-ready)
+# Gunicorn is a Python WSGI HTTP Server for UNIX
+# --bind 0.0.0.0:8000: Bind to all interfaces on port 8000
+# --workers 3: Run 3 worker processes (adjust based on CPU cores)
+# --timeout 120: Request timeout of 120 seconds
+# phishing_portal.wsgi:application: WSGI application entry point
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "phishing_portal.wsgi:application"]
 
