@@ -788,7 +788,7 @@ Reports are saved to `security/reports/` directory.
 This project was developed by:
 
 - **Himanshu** - Project Manager
-- **Anjali** - Project Manager
+- **Anjali** - Project Manager and Researcher
 - **Shistata** - Threat Analyst
 - **Sajan** - Security Tester
 - **Roshan** - Full Stack Developer and Researcher
