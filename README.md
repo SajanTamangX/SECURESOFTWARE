@@ -33,13 +33,25 @@ Built with Django 5.x and PostgreSQL, the platform provides a robust foundation 
 
 - **Campaign Management**: Create, schedule, and manage phishing email campaigns
 - **Email Templates**: Pre-built and customizable email templates for various phishing scenarios
-- **Recipient Management**: Upload and manage campaign recipients
-- **Dashboard & Analytics**: Track campaign performance and user engagement
+  - IT Security Alert
+  - Password Reset
+  - Payroll/Bank Details
+  - Delivery Failure
+  - HR Policy Update
+  - General Internal Email
+- **Recipient Management**: Upload and manage campaign recipients via CSV import
+- **Email Tracking**: Track email opens, link clicks, and phishing reports
+- **Dashboard & Analytics**: Track campaign performance and user engagement metrics
+- **Inbox Feature**: View and manage received phishing simulation emails
+- **Landing Pages**: Educational landing pages after clicking phishing links
 - **Audit Logging**: Comprehensive security event logging and monitoring
-- **User Roles**: Support for different user roles (Admin, Instructor, Viewer)
+- **User Roles**: Support for different user roles (Admin, Instructor, Viewer) with role-based access control
 - **Email Testing**: Integrated MailHog for email testing in development
-- **Security Middleware**: Built-in protection against common web attacks
+- **Security Middleware**: Built-in protection against common web attacks (XSS, CSRF)
 - **Training Content**: Educational blog posts and training videos
+- **Sticky Notes**: Personal notes feature for VIEWER role users
+- **Export Functionality**: Export campaign recipients and events to CSV
+- **Security Scanning**: Integrated Semgrep (SAST) and OWASP ZAP (DAST) for security testing
 
 ## 🔧 Prerequisites
 
@@ -68,7 +80,7 @@ Get the application running in under 5 minutes:
 
 ```bash
 # 1. Clone the repository
-git clone <your-repository-url>
+git clone https://github.com/SajanTamangX/SECURESOFTWARE
 cd SECURESOFTWARE
 
 # 2. Create environment file
@@ -385,20 +397,31 @@ SECURESOFTWARE/
 ├── Dockerfile                  # Development Docker image
 ├── Dockerfile.production       # Production Docker image
 ├── requirements.txt            # Python dependencies
+├── Makefile                    # Makefile with security scanning commands
 ├── .env.dev                    # Development environment variables (create this)
 ├── .env.production             # Production environment variables (create this)
 │
 ├── phishing_portal/            # Main Django application
 │   ├── accounts/               # User authentication and management
-│   │   ├── models.py          # User models
+│   │   ├── models.py          # User models with role-based access
 │   │   ├── views.py           # Authentication views
-│   │   └── urls.py            # Account URLs
+│   │   ├── forms.py           # Login forms
+│   │   ├── decorators.py     # Role-based access decorators
+│   │   ├── urls.py            # Account URLs
+│   │   └── management/        # Management commands
+│   │       └── commands/
+│   │           └── create_admin.py  # Create admin user command
 │   │
 │   ├── campaigns/             # Campaign management
 │   │   ├── models.py          # Campaign, EmailTemplate, Recipient models
 │   │   ├── views.py           # Campaign views
-│   │   ├── views_admin.py     # Admin views
+│   │   ├── views_admin.py     # Admin views (audit logs)
 │   │   ├── views_dashboard.py # Dashboard views
+│   │   ├── views_export.py   # Export views (CSV exports)
+│   │   ├── forms.py           # Campaign and template forms
+│   │   ├── services.py        # Email sending and CSV import services
+│   │   ├── utils.py           # Utility functions (logging)
+│   │   ├── blog_posts.py      # Educational blog posts content
 │   │   └── urls.py            # Campaign URLs
 │   │
 │   ├── phishing_portal/       # Django project settings
@@ -406,17 +429,29 @@ SECURESOFTWARE/
 │   │   ├── urls.py            # Root URL configuration
 │   │   ├── wsgi.py            # WSGI configuration
 │   │   └── middleware/        # Custom middleware
-│   │       └── security.py    # Security middleware
+│   │       └── security.py    # Security middleware (XSS protection)
 │   │
 │   ├── templates/             # HTML templates
 │   │   ├── base.html         # Base template
 │   │   ├── campaigns/        # Campaign templates
 │   │   ├── admin/            # Admin templates
+│   │   ├── instructor/       # Instructor templates
+│   │   ├── viewer/           # Viewer templates
 │   │   └── registration/     # Auth templates
 │   │
 │   ├── manage.py             # Django management script
 │   └── db.sqlite3            # SQLite database (development only)
 │
+├── security/                  # Security testing tools
+│   ├── run_zap_baseline.sh   # OWASP ZAP baseline scan script
+│   └── reports/              # Security scan reports
+│
+├── scripts/                   # Utility scripts
+│   └── semgrep_scan.sh       # Semgrep scanning script
+│
+├── create_admin_user.md      # Instructions for creating admin users
+├── SETUP.md                  # Detailed setup instructions
+├── SECURITY_HARDENING_REPORT.md  # Security hardening documentation
 └── README.md                  # This file
 ```
 
@@ -646,13 +681,107 @@ docker-compose exec web ls -la phishing_portal/staticfiles/
 - Custom security middleware for attack prevention
 - Audit logging for security events
 
+## 👥 User Roles and Permissions
+
+The application supports three user roles with different access levels:
+
+### ADMIN Role
+- Full access to all features
+- Can create, edit, and delete campaigns
+- Can create and manage email templates
+- Can view all campaigns and recipients
+- Can access audit logs
+- Can manage all users
+
+### INSTRUCTOR Role
+- Can create and manage campaigns
+- Can create and manage email templates
+- Can upload recipients via CSV
+- Can send campaign emails
+- Can view campaign analytics
+- Cannot access audit logs or manage users
+
+### VIEWER Role
+- Can view campaigns they created (if any)
+- Can view emails sent to their email address (inbox)
+- Can access educational blog posts
+- Can access training videos
+- Can create and manage sticky notes
+- Cannot create campaigns or templates
+
+### Creating Admin Users
+
+To create an admin user, use the custom management command:
+
+**With Docker:**
+```bash
+docker-compose exec web python phishing_portal/manage.py create_admin
+```
+
+**Without Docker:**
+```bash
+cd phishing_portal
+python manage.py create_admin
+```
+
+This creates a superuser with:
+- Username: `admin`
+- Password: `admin`
+- Role: `ADMIN`
+
+**Note**: Change the default password after first login!
+
+## 🧪 Testing and Security Scanning
+
+### Running Tests
+
+```bash
+# With Docker
+docker-compose exec web python phishing_portal/manage.py test
+
+# Without Docker
+cd phishing_portal
+python manage.py test
+```
+
+### Security Scanning with Semgrep
+
+The project includes Semgrep for Static Application Security Testing (SAST):
+
+```bash
+# Install Semgrep
+make semgrep-install
+
+# Run security scan
+make semgrep-scan
+
+# Run scan with JSON output
+make semgrep-scan-json
+```
+
+### Dynamic Security Testing with OWASP ZAP
+
+The project includes OWASP ZAP for Dynamic Application Security Testing (DAST):
+
+```bash
+# Run ZAP baseline scan (local development)
+bash security/run_zap_baseline.sh http://localhost:8000
+
+# Run ZAP scan (Docker Compose)
+bash security/run_zap_baseline.sh http://web:8000
+```
+
+Reports are saved to `security/reports/` directory.
+
 ## 📝 Additional Notes
 
 - **Database**: The application uses PostgreSQL. SQLite (`db.sqlite3`) is only for local development without Docker.
 - **Email Testing**: MailHog is included in the development Docker setup for testing emails without sending real emails.
 - **Static Files**: Static files are collected in production and served via Gunicorn or a reverse proxy.
 - **Logging**: Security events are logged to `phishing_portal/security.log`.
-- **User Roles**: The application supports multiple user roles with different permissions.
+- **User Roles**: The application supports multiple user roles with different permissions (see User Roles section above).
+- **Makefile**: The project includes a Makefile with convenient commands for security scanning (see `make help`).
+- **Security Directory**: Contains OWASP ZAP scripts and security testing reports.
 
 ## 🤝 Contributing
 
@@ -664,11 +793,13 @@ docker-compose exec web ls -la phishing_portal/staticfiles/
 
 ## 📄 License
 
-[Add your license information here]
+This project is licensed under the MIT License.
+
+**Note**: If you have a specific license file, please update this section accordingly.
 
 ## 📧 Support
 
-For issues, questions, or contributions, please [open an issue](<your-repository-url>/issues) or contact the development team.
+For issues, questions, or contributions, please [open an issue](https://github.com/SajanTamangX/SECURESOFTWARE/issues) or contact the development team.
 
 ---
 
