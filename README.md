@@ -783,26 +783,15 @@ Reports are saved to `security/reports/` directory.
 - **Makefile**: The project includes a Makefile with convenient commands for security scanning (see `make help`).
 - **Security Directory**: Contains OWASP ZAP scripts and security testing reports.
 
-## 🤝 Contributing
+## 👥 Development Team
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+This project was developed by:
 
-## 📄 License
+- **Himanshu** - Project Manager
+- **Anjali** - Project Manager
+- **Shistata** - Threat Analyst
+- **Sajan** - Security Tester
+- **Roshan** - Full Stack Developer and Researcher
 
-This project is licensed under the MIT License.
-
-**Note**: If you have a specific license file, please update this section accordingly.
-
-## 📧 Support
-
-For issues, questions, or contributions, please [open an issue](https://github.com/SajanTamangX/SECURESOFTWARE/issues) or contact the development team.
-
----
-
-**Happy Coding! 🚀**
 
 
